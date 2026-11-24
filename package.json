@@ -1,0 +1,28 @@
+{
+  "name": "hoyo-gacha-export",
+  "version": "0.1.0",
+  "private": true,
+  "description": "原神与崩坏：星穹铁道抽卡记录导出工具的统一入口",
+  "main": "apps/desktop/src/main/bootstrap.js",
+  "author": "wish-export contributors",
+  "license": "MIT",
+  "scripts": {
+    "setup": "node scripts/setup-vendor.js",
+    "dev": "electron .",
+    "start": "electron .",
+    "start:genshin": "cross-env WISH_GAME=genshin electron .",
+    "start:starrail": "cross-env WISH_GAME=starrail electron .",
+    "build:games": "node scripts/build-games.js",
+    "build": "yarn build:games",
+    "package": "yarn build:games && electron-builder",
+    "test": "node --test tests/contracts",
+    "import-upstream": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-upstream.ps1",
+    "sync-upstream": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-upstream.ps1",
+    "patch-vendor": "node scripts/apply-vendor-patches.js"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^16.0.7",
+    "electron-builder": "^23.0.2"
+  }
+}

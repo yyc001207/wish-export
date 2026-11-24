@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Syntax check
+        run: |
+          node --check apps/desktop/src/main/bootstrap.js
+          node --check apps/desktop/src/launcher/preload.js
+          node --check apps/desktop/src/launcher/launcher.js
+          node --check scripts/apply-vendor-patches.js
+          node --check scripts/build-games.js
+          node --check scripts/setup-vendor.js
+          node --check tests/contracts/vendor-shape.test.js
+
+      - name: Contract tests
+        run: node --test tests/contracts

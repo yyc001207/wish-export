@@ -1,0 +1,21 @@
+appId: org.wish-export.unified
+productName: Wish Export
+copyright: Copyright © 2026 wish-export contributors
+asar: false
+directories:
+  output: release
+files:
+  - package.json
+  - LICENSE
+  - apps/desktop/src/main/**/*
+  - apps/desktop/src/launcher/**/*
+  - dist/electron/games/**/*
+win:
+  target:
+    - zip
+mac:
+  target:
+    - dmg
+linux:
+  target:
+    - deb

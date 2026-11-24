@@ -1,0 +1,37 @@
+{
+  "genshin": [
+    "CHANGE_UID",
+    "COPY_URL",
+    "DISABLE_PROXY",
+    "EXPORT_UIGF_JSON",
+    "EXPORT_UIGF_JSON_GISTS",
+    "FETCH_DATA",
+    "FORCE_READ_DATA",
+    "GET_CONFIG",
+    "I18N_DATA",
+    "IMPORT_UIGF_JSON",
+    "LANG_MAP",
+    "OPEN_CACHE_FOLDER",
+    "READ_DATA",
+    "RELAUNCH",
+    "SAVE_CONFIG",
+    "SAVE_EXCEL"
+  ],
+  "starrail": [
+    "CHANGE_UID",
+    "COPY_URL",
+    "DELETE_DATA",
+    "DISABLE_PROXY",
+    "EXPORT_UIGF_JSON",
+    "FETCH_DATA",
+    "GET_CONFIG",
+    "I18N_DATA",
+    "IMPORT_UIGF_JSON",
+    "LANG_MAP",
+    "OPEN_CACHE_FOLDER",
+    "READ_DATA",
+    "RELAUNCH",
+    "SAVE_CONFIG",
+    "SAVE_EXCEL"
+  ]
+}

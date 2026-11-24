@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:;"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HoYo 抽卡记录导出</title>
+    <link rel="stylesheet" href="./launcher.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">WISH EXPORT</p>
+        <h1>抽卡记录导出</h1>
+        <p class="lede">
+          选择一个游戏开始。两个游戏的数据分别保存在独立目录，互不覆盖。
+        </p>
+      </header>
+
+      <section id="game-list" class="game-list" aria-label="游戏列表"></section>
+
+      <p id="message" class="message" role="status"></p>
+
+      <footer class="footer">
+        <span id="version" class="version">v0.0.0</span>
+        <div class="footer-actions">
+          <button id="open-data" class="ghost-button" type="button">打开数据目录</button>
+          <button id="quit" class="ghost-button" type="button">退出</button>
+        </div>
+      </footer>
+    </main>
+
+    <script src="./launcher.js"></script>
+  </body>
+</html>

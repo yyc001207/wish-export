@@ -1,0 +1,67 @@
+name: sync-upstream
+
+on:
+  schedule:
+    # 每天北京时间 04:00 检查两个上游
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git
+        run: |
+          git config user.name "upstream-sync[bot]"
+          git config user.email "upstream-sync[bot]@users.noreply.github.com"
+
+      - name: Pull genshin upstream
+        run: >
+          git subtree pull
+          --prefix=vendor/genshin
+          https://github.com/biuuu/genshin-wish-export.git
+          main --squash
+          -m "chore(sync): genshin upstream"
+
+      - name: Pull starrail upstream
+        run: >
+          git subtree pull
+          --prefix=vendor/starrail
+          https://github.com/biuuu/star-rail-warp-export.git
+          main --squash
+          -m "chore(sync): starrail upstream"
+
+      - name: Re-apply vendor patches
+        run: node scripts/apply-vendor-patches.js
+
+      - name: Contract tests
+        run: node --test tests/contracts
+
+      - name: Create pull request
+        if: always()
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bot/sync-upstream
+          delete-branch: true
+          title: 'chore: 同步上游 (genshin / starrail)'
+          commit-message: 'chore: sync upstream'
+          body: |
+            自动同步两个上游仓库的最新提交。
+
+            合并前请重点检查：
+            - 契约测试是否通过
+            - `vendor` 补丁是否仍然生效（WISH_APP_ROOT / WISH_GAME / WISH_RENDERER / WISH_UPDATE_DISABLED）
+            - 星铁 `idJson.json` 是否带入了新版本数据
+            - 上游是否新增或删除了 IPC 通道
