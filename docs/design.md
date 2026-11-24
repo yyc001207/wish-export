@@ -427,7 +427,7 @@ yarn sync-upstream
 - [x] Windows exe 安装包与 zip 打包验证。
 - [ ] 首次启动、升级、卸载路径验证。
 - [x] GitHub Release 自动发布验证（`release.yml` 已发布 v0.1.0、v0.1.1、v0.2.0）。
-- [ ] README 用户文档。
+- [x] README 用户文档（2026-11-24：下载安装、使用、数据位置、迁移、FAQ）。
 
 ### M4 统一更新器
 
