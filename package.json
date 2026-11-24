@@ -1,6 +1,6 @@
 {
   "name": "hoyo-gacha-export",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "原神与崩坏：星穹铁道抽卡记录导出工具的统一入口",
   "main": "apps/desktop/src/main/bootstrap.js",
