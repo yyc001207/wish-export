@@ -14,7 +14,6 @@
     "start:starrail": "cross-env WISH_GAME=starrail electron .",
     "build:games": "node scripts/build-games.js",
     "build": "yarn build:games",
-    "package": "yarn build:games && electron-builder",
     "test": "node --test tests",
     "import-upstream": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-upstream.ps1",
     "sync-upstream": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-upstream.ps1",
