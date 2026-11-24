@@ -42,7 +42,7 @@ function renderStatus (status) {
 
   if (runningGame) {
     const game = status.games.find(item => item.id === runningGame)
-    showMessage(`${game ? game.name : runningGame} 正在运行，关闭游戏窗口后会回到启动器`)
+    showMessage(`${game ? game.name : runningGame} 正在运行，关闭分析工具窗口后会回到启动器`)
   } else {
     showMessage('')
   }
@@ -92,7 +92,7 @@ function renderGames (games, runningGame) {
     if (isRunning) {
       enter.textContent = '运行中…'
     } else if (locked) {
-      enter.textContent = '请先关闭当前游戏'
+      enter.textContent = '请先关闭当前分析工具'
     } else {
       enter.textContent = game.built ? '进入工具 →' : '请先运行 yarn build:games'
     }
@@ -107,7 +107,7 @@ function renderGames (games, runningGame) {
   if (!games.some(game => game.built)) {
     const hint = document.createElement('p')
     hint.className = 'empty-hint'
-    hint.textContent = '没有检测到任何游戏构建。先在项目根目录运行 yarn build:games，再重新打开启动器。'
+    hint.textContent = '没有检测到任何分析工具构建。先在项目根目录运行 yarn build:games，再重新打开启动器。'
     gameList.append(hint)
   }
 }
@@ -222,7 +222,7 @@ function closeImportDialog () {
 
 function syncImportButton () {
   importButton.disabled = Boolean(runningGameId) || importBusy
-  importButton.title = runningGameId ? '请先关闭正在运行的游戏' : ''
+  importButton.title = runningGameId ? '请先关闭正在运行的分析工具' : ''
 }
 
 function showMessage (text) {

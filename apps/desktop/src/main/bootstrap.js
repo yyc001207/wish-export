@@ -90,8 +90,8 @@ function isGameBuilt (id) {
 }
 
 /**
- * 游戏子进程入口。
- * 只加载一个游戏的主进程模块：两个上游都注册了同名 ipcMain.handle，
+ * 分析工具子进程入口。
+ * 只加载一个分析工具的主进程模块：两个上游都注册了同名 ipcMain.handle，
  * 同时加载会抛 "Attempted to register a second handler"。
  */
 function startGame (id) {
@@ -100,7 +100,7 @@ function startGame (id) {
   if (!isGameBuilt(id)) {
     app.whenReady().then(() => {
       dialog.showErrorBox(
-        '缺少游戏构建',
+        '缺少分析工具构建',
         `未找到 ${GAMES[id].name} 的构建产物。\n\n请先在项目根目录运行：\n  yarn build:games`
       )
       app.quit()
@@ -118,8 +118,8 @@ function startGame (id) {
 }
 
 /**
- * 启动器常驻托盘；游戏以独立子进程运行。
- * 关闭游戏窗口时子进程退出，启动器重新显示并把入口恢复为可点击。
+ * 启动器常驻托盘；分析工具以独立子进程运行。
+ * 关闭分析工具窗口时子进程退出，启动器重新显示并把入口恢复为可点击。
  */
 function startLauncher () {
   const gotLock = app.requestSingleInstanceLock()
@@ -281,10 +281,10 @@ function startLauncher () {
 
   function launchGame (id) {
     if (!GAMES[id]) {
-      return { ok: false, message: '未知的游戏标识' }
+      return { ok: false, message: '未知的分析工具标识' }
     }
     if (runningGame) {
-      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前游戏` }
+      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前分析工具` }
     }
     if (!isGameBuilt(id)) {
       return { ok: false, message: `${GAMES[id].name} 尚未构建，请先运行 yarn build:games` }
@@ -369,14 +369,14 @@ function startLauncher () {
 
   /**
    * 把原版数据复制到 userData/<game>/，只复制不覆盖。
-   * 游戏运行中允许导入会与上游读写同一目录，直接拒绝。
+   * 分析工具运行中允许导入会与上游读写同一目录，直接拒绝。
    */
   function importLegacy (payload) {
     const { dir, game } = payload || {}
 
-    if (!GAMES[game]) return { ok: false, message: '未知的游戏标识' }
+    if (!GAMES[game]) return { ok: false, message: '未知的分析工具标识' }
     if (runningGame) {
-      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前游戏` }
+      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前分析工具` }
     }
 
     try {
