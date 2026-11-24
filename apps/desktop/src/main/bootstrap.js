@@ -27,6 +27,7 @@ const GAMES_DIST = path.join(APP_DIR, 'dist', 'electron', 'games')
 const LAUNCHER_HTML = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'index.html')
 const LAUNCHER_PRELOAD = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'preload.js')
 const WISH_GAME_ARG = '--wish-game='
+const WISH_LAUNCHER_ARG = '--wish-launcher'
 const REQUESTED_GAME = getRequestedGame()
 
 app.setAppUserModelId('org.wish-export.unified')
@@ -38,6 +39,9 @@ if (GAMES[REQUESTED_GAME]) {
 }
 
 function getRequestedGame () {
+  // 显式要求回到启动器时，忽略可能残留的 WISH_GAME 环境变量和游戏参数
+  if (process.argv.includes(WISH_LAUNCHER_ARG)) return ''
+
   const arg = process.argv.find(item => item.startsWith(WISH_GAME_ARG))
   if (arg) return arg.slice(WISH_GAME_ARG.length)
   return process.env.WISH_GAME || ''
@@ -107,9 +111,17 @@ function installReturnToLauncher () {
     relaunching = true
     event.preventDefault()
 
+    // app.relaunch 会继承当前进程环境变量，必须清掉 WISH_GAME：
+    // 否则重启后的进程仍会被判定为原游戏，出现“关闭后一直重开原神”的循环。
+    delete process.env.WISH_GAME
+    delete process.env.WISH_APP_ROOT
+    delete process.env.WISH_RENDERER
+    delete process.env.WISH_UPDATE_DISABLED
+
     const args = process.argv
       .slice(1)
-      .filter(arg => !arg.startsWith(WISH_GAME_ARG))
+      .filter(arg => !arg.startsWith(WISH_GAME_ARG) && arg !== WISH_LAUNCHER_ARG)
+      .concat([WISH_LAUNCHER_ARG])
 
     app.relaunch({ args })
     setImmediate(() => app.quit())
@@ -143,10 +155,10 @@ function startLauncher () {
       return { ok: false, message: `${GAMES[id].name} 尚未构建，请先运行 yarn build:games` }
     }
     // 通过重启进程切换游戏，确保上一个游戏注册的 IPC 与模块状态被彻底清空。
-    // app.relaunch 在 Electron 16 不保证透传自定义环境变量，因此用启动参数传递游戏 id。
+    // 同时清掉 --wish-launcher，避免从启动器进入游戏后又被判定为启动器模式。
     const args = process.argv
       .slice(1)
-      .filter(arg => !arg.startsWith(WISH_GAME_ARG))
+      .filter(arg => !arg.startsWith(WISH_GAME_ARG) && arg !== WISH_LAUNCHER_ARG)
       .concat([`${WISH_GAME_ARG}${id}`])
     app.relaunch({ args })
     app.exit(0)
