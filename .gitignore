@@ -168,3 +168,6 @@ vendor/*/userData/
 # 本地参考克隆，不属于统一仓库
 /genshin-wish-export/
 /star-rail-warp-export/
+
+# IDE 生成的分享产物
+.trae-html-share-packages/
