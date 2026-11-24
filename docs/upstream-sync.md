@@ -58,6 +58,15 @@ yarn dev            # 打开启动器
 - `vendor/` 目录不能预先存在。如果已经存在，先移走并提交，再重新导入。
 - 首次导入会产生 git 提交，这是 `git subtree add` 的正常行为。
 - 当前仓库里已有的 `genshin-wish-export/`、`star-rail-warp-export/` 两个克隆只作为参考，不参与构建。导入完成后可以自行决定是否保留。
+- Git for Windows 可能输出 `git-subtree: line 877: echo: write error: Bad file descriptor`。只要 `git log` 中有 `as 'vendor/<game>'` 的提交，且 `vendor/<game>/package.json` 存在，导入就是成功的；脚本按实际结果判定，不依赖退出码。
+
+导入成功的验证命令：
+
+```powershell
+git log --oneline -4
+Test-Path vendor/genshin/package.json
+Test-Path vendor/starrail/package.json
+```
 
 ### 2.1 本地已有上游克隆怎么办
 

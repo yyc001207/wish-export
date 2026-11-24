@@ -21,17 +21,32 @@ foreach ($name in $remotes.Keys) {
   }
 }
 
-Write-Host '[sync] 同步 genshin 上游...'
-git subtree pull --prefix=vendor/genshin upstream-genshin main --squash -m "chore(sync): genshin upstream"
-if ($LASTEXITCODE -ne 0) {
-  throw 'genshin 上游同步出现冲突。请按 docs/upstream-sync.md 处理冲突后重新运行。'
+function Invoke-SubtreePull {
+  param([string]$Prefix, [string]$Remote, [string]$Message)
+
+  Write-Host "[sync] 同步 $Remote ..."
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $output = (git subtree pull --prefix=$Prefix $Remote main --squash -m $Message 2>&1 | Out-String)
+  $code = $LASTEXITCODE
+  $ErrorActionPreference = $previous
+
+  if ($output.Trim()) { Write-Host $output.TrimEnd() }
+
+  $unmerged = git ls-files -u
+  if ($unmerged) {
+    throw "$Remote 同步出现未解决冲突。请按 docs/upstream-sync.md 处理冲突后重新运行。"
+  }
+  if ($output -match 'fatal:|CONFLICT|unable to access|Could not read from remote') {
+    throw "$Remote 同步失败（exit=$code）。请检查上方 git 输出。"
+  }
+  if ($code -ne 0) {
+    Write-Host "[sync] 提示：git subtree 返回 $code，但未检测到冲突或致命错误，按成功处理。"
+  }
 }
 
-Write-Host '[sync] 同步 starrail 上游...'
-git subtree pull --prefix=vendor/starrail upstream-starrail main --squash -m "chore(sync): starrail upstream"
-if ($LASTEXITCODE -ne 0) {
-  throw 'starrail 上游同步出现冲突。请按 docs/upstream-sync.md 处理冲突后重新运行。'
-}
+Invoke-SubtreePull -Prefix 'vendor/genshin' -Remote 'upstream-genshin' -Message 'chore(sync): genshin upstream'
+Invoke-SubtreePull -Prefix 'vendor/starrail' -Remote 'upstream-starrail' -Message 'chore(sync): starrail upstream'
 
 Write-Host '[sync] 重新校验 vendor 补丁...'
 node scripts/apply-vendor-patches.js
