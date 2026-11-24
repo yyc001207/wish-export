@@ -196,35 +196,30 @@ docs: 修复文档错字
    yarn dev
    ```
 
-4. 打包（产出 NSIS 安装包与 zip）：
-
-   ```powershell
-   yarn package
-   ```
-
-5. 在 Windows 上安装 exe 或解压 zip，按第 7 节清单手工验证。
-6. 提交版本号：
+4. 提交版本号：
 
    ```powershell
    git add package.json
    git commit -m "chore(release): v0.1.1"
    ```
 
-7. 打附注标签：
+5. 打附注标签：
 
    ```powershell
    git tag -a v0.1.1 -m "v0.1.1"
    ```
 
-8. 推送提交与标签：
+6. 推送提交与标签：
 
    ```powershell
    git push origin main
    git push origin v0.1.1
    ```
 
-9. 推送标签后会触发 `.github/workflows/release.yml`，自动构建 exe/zip、生成 SHA256 并创建 GitHub Release。
-10. 如果自动发布失败，查看 Actions 日志，或手动上传 `release/` 产物。
+7. 推送标签后会触发 `.github/workflows/release.yml`，由 GitHub Actions 构建 exe/zip、生成 SHA256 并创建 GitHub Release。
+8. 如果自动发布失败，查看 Actions 日志。
+
+打包不在本地执行。本地只运行 `yarn test` 和可选的 `yarn build:games` 做验证。
 
 推送与打标签属于人工确认操作，AI 代理不得自行执行。
 

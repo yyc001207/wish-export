@@ -111,11 +111,11 @@ yarn test
 | --- | --- | --- | --- |
 | T3.1 | 统一版旧安装目录数据迁移 | DONE | 启动时复制 `<旧安装目录>/userData/<game>` 到 `app.getPath('userData')/userData/<game>`；只补齐缺失文件、不覆盖、不删除；有单测 |
 | T3.2 | 原版独立程序数据导入 UI | TODO | 启动器提供“导入旧数据”入口；可选择旧安装目录与游戏归属 |
-| T3.3 | Windows 打包 | DONE | 已产出 `Wish-Export-0.1.0-x64.exe`（59.5 MB）与 `.zip`（80.5 MB） |
+| T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.1.0-x64.exe`（59.5 MB）与 `.zip`（80.5 MB）；v0.1.0 已发布 |
 | T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个游戏的 main/renderer 均存在 |
 | T3.5 | 用户文档 | TODO | 根 README 说明安装、使用、数据位置、从旧版迁移 |
 | T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
-| T3.7 | GitHub Releases 自动发布 | DONE | `.github/workflows/release.yml`：推送 `v*` 标签自动上传 exe/zip/SHA256；尚未在远端实际发版 |
+| T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0 实际运行成功，exe/zip/SHA256 已上传 |
 
 ### T3.1 实现提示
 
@@ -136,7 +136,8 @@ yarn test
 
 ### T3.3 打包提示
 
-- Windows 产物是 NSIS 安装包（exe）与 zip 便携包，产物名包含版本与架构；
+- Windows 产物由 GitHub Actions 构建，不在本地运行 electron-builder；
+- 推送 `main` 触发 `build.yml` 产出 artifact；推送 `v*` 标签触发 `release.yml` 发布；
 - NSIS 默认安装到当前用户目录，避免 Program Files 写入权限问题；
 - 数据写在 `app.getPath('userData')/userData/<game>/`，更新/重装不会覆盖；安装/卸载前仍建议备份；
 - 安装包未签名，SmartScreen 可能提示未知发布者；

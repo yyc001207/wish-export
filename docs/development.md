@@ -235,20 +235,21 @@ Get-ChildItem .\userData -Recurse
 
 ## 6. 打包
 
-```powershell
-yarn package
-```
+官方打包只在 GitHub Actions 执行，不在本地运行 electron-builder。
 
-等价于：
+- 推送到 `main`，且改动涉及 `apps/desktop/`、`build/`、`vendor/`、`package.json` 或 `electron-builder.yml`：
+  `build.yml` 自动构建 exe/zip，并上传为 workflow artifact。
+- 推送 `v*` 标签：
+  `release.yml` 构建 exe/zip、生成 SHA256，并创建 GitHub Release。
+
+本地只做开发构建：
 
 ```powershell
 yarn build:games
-electron-builder
+yarn dev
 ```
 
-输出：`release/`。
-
-产物示例：
+产物示例（来自 Actions artifact）：
 
 ```text
 release/
@@ -262,19 +263,19 @@ release/
 - `productName`：`Wish Export`
 - `asar: false`
 - Windows：NSIS 安装包（exe）+ zip 便携包
+- 应用图标：`build/icon.ico`，运行时窗口与托盘使用 `apps/desktop/assets/`
 - macOS：dmg
 - Linux：deb
 
-打包检查：
+下载 Actions artifact 后检查：
 
-- `release/Wish-Export-<version>-x64.exe` 存在；
-- `release/Wish-Export-<version>-x64.zip` 存在；
-- `release/win-unpacked/resources/app/apps/desktop/src/main/bootstrap.js` 存在；
-- `resources/app/dist/electron/games/genshin/main/main.js` 存在；
-- `resources/app/dist/electron/games/starrail/main/main.js` 存在；
-- 安装 exe 或解压 zip 后，双击程序能打开启动器；
+- `Wish-Export-<version>-x64.exe` 存在；
+- `Wish-Export-<version>-x64.zip` 存在；
+- 安装 exe 或解压 zip 后，桌面快捷方式和程序窗口使用统一图标；
+- 托盘图标与程序图标一致，只是尺寸更小；
+- 双击程序能打开启动器；
 - 进入游戏后数据写入 `app.getPath('userData')/userData/<game>/`，不是安装目录；
-- 不要把程序安装到只读目录，安装/卸载前备份 `userData`。
+- 不要把程序安装到只读目录，安装/卸载前备份数据目录。
 
 当前只在 Windows 上验证。macOS/Linux 配置保留但未验证，不要声称已支持。
 
@@ -283,14 +284,15 @@ release/
 完整规则见 [versioning.md](versioning.md)。这里只列执行顺序：
 
 1. 确认工作区干净，上游已同步到预期快照；
-2. `yarn patch-vendor`、`yarn test`、`yarn build:games` 全部通过；
+2. 本地运行 `yarn patch-vendor`、`yarn test`，可选 `yarn build:games`；
 3. 按版本规则修改根 `package.json` 的 `version`；
-4. `yarn package`，安装 exe 或解压 zip 后手工验证两个游戏；
-5. 提交 `chore(release): vX.Y.Z`，打附注标签 `vX.Y.Z`；
-6. 推送标签，由 `.github/workflows/release.yml` 自动上传 exe/zip/SHA256 并创建 GitHub Release。
+4. 提交 `chore(release): vX.Y.Z`，打附注标签 `vX.Y.Z`；
+5. 推送 `main` 与标签；
+6. 推送标签后，由 `.github/workflows/release.yml` 自动构建并创建 GitHub Release。
 
 注意：
 
+- 打包不在本地执行，官方 exe/zip 全部来自 GitHub Actions；
 - GitHub Release 只在推送 `v*` 标签时触发，且 `package.json` 版本必须与标签一致；
 - 发布说明必须记录两个上游的 `git-subtree-split` 与星铁 `idJson` 版本；
 - 旧版不会自动升级到统一版，发布说明要写清迁移方式；

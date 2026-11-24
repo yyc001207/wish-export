@@ -33,6 +33,8 @@
 - vendor 补丁已应用（10 处），契约测试 9/9 通过。
 - 两个上游构建依赖已安装，两个游戏的 main 与 renderer 构建成功。
 - Windows exe 与 zip 已在本地产出（exe 59.5 MB，zip 80.5 MB）。
+- 应用图标已覆盖 Windows 窗口、托盘、exe 与 NSIS 安装包。
+- v0.1.0 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
 
 未完成（不要假装已存在）：
 
@@ -41,7 +43,6 @@
 - 统一更新器未实现；当前通过补丁禁用上游自更新。
 - 统一版旧安装目录的数据会在启动时自动迁移到 AppData；原版独立程序的数据仍需手动导入。
 - 单窗口统一 UI 未实现，也不在当前范围。
-- GitHub Release 工作流尚未在远端实际发版。
 
 进度以 [docs/tasks.md](docs/tasks.md) 为准。
 
@@ -95,6 +96,8 @@ wish-export/
     AI 不得主动提升版本号、打标签或推送，除非任务明确标注为发布。
 12. **一次提交只做一类变更。**
     不同 `type` 的改动必须拆成多个提交；禁止把功能、修复、文档、构建、CI 混在同一个 commit。同一类变更可以跨多个文件。
+13. **打包只在 GitHub Actions 执行。**
+    本地只做 `yarn build:games` 和 `yarn dev`；不在本地运行 electron-builder 作为发布流程。
 
 ## 5. 常用命令
 
@@ -109,8 +112,12 @@ wish-export/
 | `yarn dev` | 打开统一启动器 | 需要先 `build:games` |
 | `yarn start:genshin` | 直接启动原神模块 | 跳过启动器 |
 | `yarn start:starrail` | 直接启动星铁模块 | 跳过启动器 |
-| `yarn package` | 构建并打包 | 输出 exe 安装包与 zip 到 `release/` |
 | `yarn sync-upstream` | 同步两个上游 + 补丁 + 契约测试 | 会创建 git 提交 |
+
+官方打包只在 GitHub Actions 执行：
+
+- 推送到 `main` 且涉及代码、图标、构建或 `vendor/`：`build.yml` 自动构建 exe/zip 并上传 workflow artifact；
+- 推送 `v*` 标签：`release.yml` 构建并创建 GitHub Release。
 
 单游戏热更新开发不要走统一入口，直接在上游目录里跑：
 

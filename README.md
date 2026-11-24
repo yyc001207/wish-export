@@ -27,7 +27,7 @@
 
 ## 下载
 
-发布后可在 GitHub Releases 下载：
+发布后可在 GitHub Releases 下载。exe/zip 均由 GitHub Actions 构建，不在本地打包：
 
 - `Wish-Export-<version>-x64.exe`：NSIS 安装包，默认安装到当前用户目录；
 - `Wish-Export-<version>-x64.zip`：便携包，解压到可写目录后运行；
