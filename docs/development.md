@@ -192,7 +192,7 @@ dist/electron/games/starrail/renderer/index.html
 ### 5.2 日志
 
 - 主进程 `console.log` 输出到终端。
-- 上游会把日志写入 `userData/<game>/log.txt`（由 `utils.js` 的 `log` 逻辑决定）。
+- 上游会把日志写入 `app.getPath('userData')/userData/<game>/log.txt`（由 `utils.js` 的 `log` 逻辑决定）。
 - 渲染器错误通过 `ERROR` 事件显示在界面上，同时打印到 DevTools。
 
 ### 5.3 数据目录
@@ -200,9 +200,10 @@ dist/electron/games/starrail/renderer/index.html
 | 场景 | 数据目录 |
 | --- | --- |
 | 统一入口开发 | `<仓库根>/userData/genshin/`、`<仓库根>/userData/starrail/` |
-| 统一入口打包后 | `<安装目录>/userData/genshin/`、`<安装目录>/userData/starrail/` |
+| 统一入口打包后 | `app.getPath('userData')/userData/genshin/`、`.../starrail/`；Windows 通常为 `%APPDATA%\hoyo-gacha-export\userData\...` |
 | vendor 单游戏热更新 | `vendor/<game>/userData/default/` |
-| 旧版程序 | `<旧安装目录>/userData/` |
+| 旧版统一工具 | `<旧安装目录>/userData/`，首次启动自动复制到 AppData |
+| 原版独立程序 | `<旧安装目录>/userData/`，需要手动导入 |
 
 查看当前数据：
 
@@ -272,7 +273,7 @@ release/
 - `resources/app/dist/electron/games/genshin/main/main.js` 存在；
 - `resources/app/dist/electron/games/starrail/main/main.js` 存在；
 - 安装 exe 或解压 zip 后，双击程序能打开启动器；
-- 进入游戏后数据写入安装目录的 `userData/<game>/`；
+- 进入游戏后数据写入 `app.getPath('userData')/userData/<game>/`，不是安装目录；
 - 不要把程序安装到只读目录，安装/卸载前备份 `userData`。
 
 当前只在 Windows 上验证。macOS/Linux 配置保留但未验证，不要声称已支持。

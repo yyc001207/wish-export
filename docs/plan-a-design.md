@@ -108,7 +108,7 @@
 | `vendor/genshin/` | 原神上游只读副本 | 仅补丁脚本 |
 | `vendor/starrail/` | 星铁上游只读副本 | 仅补丁脚本 |
 | `dist/electron/games/` | 构建产物，运行时加载 | 否，构建生成 |
-| `userData/` | 运行数据，便携模式 | 否，运行时生成 |
+| `userData/` | 开发态运行数据；打包后改用 `app.getPath('userData')` | 否，运行时生成 |
 
 ## 6. 运行时设计
 
@@ -123,7 +123,7 @@
    - `spawn(process.execPath, ['--wish-game=<id>'], { env: { WISH_LAUNCHER_CHILD: '1' } })`；
    - 启动器窗口隐藏到托盘，两个入口变灰不可点击。
 6. 游戏子进程启动，`bootstrap.js` 注入：
-   - `WISH_APP_ROOT`：数据根目录（打包后是安装目录）；
+   - `WISH_APP_ROOT`：数据根目录（打包后是 `app.getPath('userData')`）；
    - `WISH_RENDERER`：当前游戏的 `renderer/index.html` 绝对路径；
    - `WISH_UPDATE_DISABLED=1`：禁用上游自更新；
    - 然后 `require` 对应游戏的 `main/main.js`。
@@ -156,16 +156,20 @@
 ### 7.1 目标结构
 
 ```text
+%APPDATA%\<应用名>\userData\
+├─ genshin/
+│  ├─ gacha-list-<uid>.json
+│  └─ config.json
+└─ starrail/
+   ├─ gacha-list-<uid>.json
+   └─ config.json
+
 <安装目录>/
-├─ userData/
-│  ├─ genshin/
-│  │  ├─ gacha-list-<uid>.json
-│  │  └─ config.json
-│  └─ starrail/
-│     ├─ gacha-list-<uid>.json
-│     └─ config.json
 └─ Wish Export.exe
 ```
+
+打包后数据根目录是 `app.getPath('userData')`；Windows 上通常是
+`%APPDATA%\hoyo-gacha-export\userData\<game>`。更新、重装、换安装目录都不会覆盖该目录。
 
 ### 7.2 上游原始行为
 
@@ -188,7 +192,7 @@ const userDataPath = path.resolve(appRoot, 'userData')
 `scripts/apply-vendor-patches.js` 将两处改为：
 
 ```js
-// [wish-export patch] 统一入口注入应用根目录
+// [wish-export patch] 统一入口注入数据根目录
 const appRoot = process.env.WISH_APP_ROOT || (isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..'))
 
 // [wish-export patch] 每个游戏使用独立数据目录
@@ -196,19 +200,22 @@ const userDataPath = path.resolve(appRoot, 'userData', process.env.WISH_GAME || 
 ```
 
 `bootstrap.js` 在 require 游戏主进程之前设置 `WISH_APP_ROOT` 与 `WISH_GAME`。
+打包后 `WISH_APP_ROOT` 为 `app.getPath('userData')`。
 
 ### 7.4 旧数据迁移
 
-旧版本的数据位于各自安装目录的 `userData/` 下，且没有游戏子目录。
+旧版统一工具的测试数据位于安装目录的 `userData/<game>/`。
 
-迁移策略（M3 实现）：
+迁移策略（已实现）：
 
-1. 新程序首次启动时检查自身 `userData/` 根目录是否存在 `gacha-list-*.json`。
-2. 如果存在，提供两种导入方式：
-   - 自动导入：按用户选择的旧安装目录读取；
-   - 手动导入：让用户选择旧目录。
-3. 导入后文件放入 `userData/<game>/`，不删除旧文件。
-4. 两个游戏 UID 可能相同，不能仅凭 UID 判断归属，必须由用户选择来源游戏。
+1. 新程序启动时检查 `<安装目录>/userData/<game>/`。
+2. 把文件递归复制到 `app.getPath('userData')/userData/<game>/`。
+3. 只复制目标中不存在的文件，不覆盖新版本已经写入的数据。
+4. 保留旧文件，不删除。
+5. 迁移失败只记录日志，不阻塞程序启动。
+
+原版独立程序的 `userData/` 没有游戏子目录，无法可靠判断归属，仍需要用户手动导入；
+这部分导入 UI 属于后续任务。
 
 ### 7.5 其他共享状态
 
@@ -295,8 +302,10 @@ release/
       │  └─ dist/electron/games/
       │     ├─ genshin/{main,renderer}
       │     └─ starrail/{main,renderer}
-      └─ userData/            # 首次运行后生成
 ```
+
+数据不放在安装目录，而是放在 `app.getPath('userData')/userData/<game>/`；
+更新、重装、换安装目录不会覆盖。
 
 关键配置：
 
@@ -304,8 +313,8 @@ release/
 - `main`：`apps/desktop/src/main/bootstrap.js`。
 - 打包只包含统一入口、启动器、两个游戏产物，不包含 `vendor/` 源码与 `node_modules`。
 - `electron-builder.yml` 中 `productName`、`appId` 使用新值，旧版不会自动升级到统一版。
-- Windows 产物为 NSIS exe 安装包与 zip 便携包；安装包默认安装到当前用户目录，数据写在安装目录下。
-- 安装包未签名，Windows SmartScreen 可能提示未知发布者；卸载前需要备份 `userData`。
+- Windows 产物为 NSIS exe 安装包与 zip 便携包；安装包默认安装到当前用户目录。
+- 安装包未签名，Windows SmartScreen 可能提示未知发布者；数据目录建议定期备份。
 
 ### 9.3 体积
 
@@ -374,8 +383,8 @@ yarn sync-upstream
 | 星铁 idJson 结构变化 | 低 | 名称映射失效 | `idJson` 测试失败 |
 | 原神老依赖在 Node 20 下构建失败 | 中 | 无法构建 | 固定 Node 18 或单独升级构建链；先记录实际错误再处理 |
 | 上游自更新覆盖统一目录 | 低（已禁用） | 安装损坏 | 保留 `WISH_UPDATE_DISABLED` 补丁；统一更新器上线前不放开 |
-| 旧用户数据丢失 | 中 | 用户投诉 | M3 实现导入；文档提供手动迁移路径 |
-| NSIS 安装目录 | 数据写在安装目录；只读目录写入失败，卸载可能删除数据 | 默认安装到用户目录；发布说明提示备份 `userData` |
+| 旧用户数据丢失 | 中 | 用户投诉 | 已改为 AppData 并在启动时从旧安装目录复制；原版独立程序仍需手动导入 |
+| 更新覆盖数据 | 低（已解决） | 历史记录丢失 | 数据移出安装目录；更新/重装不影响 AppData |
 | 安装包体积增加 | 低 | 下载变慢 | M2 记录实际体积；必要时做依赖外置 |
 | 两个游戏同时运行导致代理端口冲突 | 低 | 代理失败 | 单实例锁 + 启动器只允许一个游戏运行 |
 | 许可证/署名缺失 | 低 | 合规问题 | 保留两个上游 LICENSE，README 注明来源 |
@@ -397,7 +406,7 @@ yarn sync-upstream
 - [x] `yarn import-upstream` 导入两个上游（原神 `c4675ab`、星铁 `8a0b664`）。
 - [x] `yarn patch-vendor` 应用 5 类补丁（每个上游 5 处）。
 - [x] `yarn setup` 安装依赖。
-- [x] `yarn test` 通过（9/9）。
+- [x] `yarn test` 通过（10/10）。
 
 验收：契约测试不再跳过，IPC 快照、卡池类型、补丁标记全部通过。
 
@@ -406,12 +415,14 @@ yarn sync-upstream
 - [x] `yarn build:games` 两个游戏构建成功。
 - [ ] `yarn dev` 显示两个游戏“已就绪”（本地沙箱无法启动 Electron GUI，待真实桌面验证）。
 - [ ] 分别点击进入原神/星铁，界面正常加载（同上）。
-- [ ] 数据写入 `userData/<game>/`（同上）。
+- [ ] 数据写入 `app.getPath('userData')/userData/<game>/`（同上）。
+- [x] 统一定位数据到 AppData，并在启动时迁移旧安装目录数据。
 - [x] 记录安装包体积与构建耗时：exe 59.5 MB，zip 80.5 MB；构建 248.5s，打包 33.2s。
 
 ### M3 数据迁移与打包
 
-- [ ] 旧版 `userData` 导入。
+- [x] 统一版旧安装目录 `userData/<game>` 自动迁移到 AppData。
+- [ ] 原版独立程序 `userData` 的数据导入 UI。
 - [x] Windows exe 安装包与 zip 打包验证。
 - [ ] 首次启动、升级、卸载路径验证。
 - [ ] GitHub Release 自动发布验证（工作流已配置，尚未在远端发版）。
@@ -468,9 +479,9 @@ yarn sync-upstream
 
 ## 15. 开放问题
 
-1. 统一版使用新 `appId` 后，老用户如何感知升级？需要发布公告或做一次性的“旧版数据导入”引导。
+1. 原版独立程序的老用户如何导入数据？统一版旧安装目录已自动迁移，原版独立程序仍需手动导入引导。
 2. 是否需要保留原神的 Gist 上传功能？当前保留在 vendor 中，入口不变。
-3. 两个游戏是否需要在启动器中显示最近一次数据更新时间？需要读取各自 `userData/<game>/`，属于 M5。
+3. 两个游戏是否需要在启动器中显示最近一次数据更新时间？需要读取各自 `app.getPath('userData')/userData/<game>/`，属于 M5。
 4. 安装包体积若明显增大，是否将 Vue/element-plus/echarts 外置为共享资源？需要 M2 实测后决定。
 5. 是否支持 macOS/Linux？当前配置保留目标，但只在 Windows 上验证。
 6. 上游的 `RELAUNCH` 通道没有携带 `--wish-game`，重启后会回到启动器。当前更新已禁用，不会触发；统一更新器上线时需要改为自定义重启逻辑。

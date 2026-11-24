@@ -30,7 +30,7 @@ yarn dev
 - 关闭游戏窗口后自动回到启动器，入口恢复可点击；
 - 关闭启动器窗口只是收起到托盘；
 - 托盘菜单“退出”结束程序；
-- 数据分别写入 `userData/genshin/`、`userData/starrail/`。
+- 数据分别写入 `app.getPath('userData')/userData/genshin/`、`.../starrail/`。
 
 ## M0：文档与骨架（DONE）
 
@@ -86,7 +86,7 @@ yarn test
 | T2.2 | 启动器联调 | BLOCKED | 本地沙箱无法启动 Electron GUI；需在真实桌面运行 `yarn dev` 验证 |
 | T2.3 | 原神入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
 | T2.4 | 星铁入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
-| T2.5 | 数据隔离验证 | BLOCKED | 同上，需真实运行后确认 `userData/<game>/` |
+| T2.5 | 数据隔离验证 | BLOCKED | 同上，需真实运行后确认 `app.getPath('userData')/userData/<game>/` |
 | T2.6 | 切换与单实例验证 | BLOCKED | 同上，需真实桌面验证切换与单实例 |
 | T2.7 | 记录体积与耗时 | DONE | 构建 248.5s，打包 33.2s；exe 59.5 MB，zip 80.5 MB |
 | T2.8 | 托盘常驻与游戏子进程 | BLOCKED | 已实现：启动器常驻托盘、游戏子进程、入口禁用/恢复；待真实桌面验证 |
@@ -109,9 +109,9 @@ yarn test
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T3.1 | 旧版数据导入 | TODO | 首次启动可识别旧 `userData/`；导入后数据出现在 `userData/<game>/`；旧文件保留 |
-| T3.2 | 旧数据导入 UI | TODO | 启动器提供“导入旧数据”入口；可选择旧安装目录 |
-| T3.3 | Windows 打包 | DONE | 已产出 `Wish-Export-0.1.0-x64.exe`（59.5 MB）与 `.zip`（80.4 MB） |
+| T3.1 | 统一版旧安装目录数据迁移 | DONE | 启动时复制 `<旧安装目录>/userData/<game>` 到 `app.getPath('userData')/userData/<game>`；只补齐缺失文件、不覆盖、不删除；有单测 |
+| T3.2 | 原版独立程序数据导入 UI | TODO | 启动器提供“导入旧数据”入口；可选择旧安装目录与游戏归属 |
+| T3.3 | Windows 打包 | DONE | 已产出 `Wish-Export-0.1.0-x64.exe`（59.5 MB）与 `.zip`（80.5 MB） |
 | T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个游戏的 main/renderer 均存在 |
 | T3.5 | 用户文档 | TODO | 根 README 说明安装、使用、数据位置、从旧版迁移 |
 | T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
@@ -119,7 +119,15 @@ yarn test
 
 ### T3.1 实现提示
 
-- 旧版两个程序各在自己的安装目录下写 `userData/`；
+- 统一版旧安装目录的数据结构是 `userData/<game>/`；
+- 新位置为 `app.getPath('userData')/userData/<game>/`；
+- 启动时递归复制，目标已存在的文件不覆盖；
+- 旧文件保留，不删除；
+- 迁移失败只记录日志，不阻塞启动。
+
+### T3.2 实现提示
+
+- 原版两个独立程序各在自己的安装目录下写 `userData/`，没有游戏子目录；
 - 文件名为 `gacha-list-<uid>.json` 与 `config.json`；
 - 两个游戏的 UID 可能相同，不能只靠 UID 判断归属；
 - 由用户选择“这是原神数据”或“这是星铁数据”；
@@ -130,10 +138,9 @@ yarn test
 
 - Windows 产物是 NSIS 安装包（exe）与 zip 便携包，产物名包含版本与架构；
 - NSIS 默认安装到当前用户目录，避免 Program Files 写入权限问题；
-- 数据写在安装目录的 `userData/<game>/`，安装/卸载前需要备份；
+- 数据写在 `app.getPath('userData')/userData/<game>/`，更新/重装不会覆盖；安装/卸载前仍建议备份；
 - 安装包未签名，SmartScreen 可能提示未知发布者；
-- 推送 `v*` 标签会触发 `.github/workflows/release.yml`，自动上传 Release 资产。
-
+- 推送 `v*` 标签会触发 `.github/workflows/release.yml`，自动上传 Release 资产；
 - 当前 `electron-builder.yml` 已配置 `asar: false`；
 - 不要打包 `vendor/` 与 `node_modules/`；
 - 检查 `app.getAppPath()` 在打包后的实际值；
@@ -160,7 +167,7 @@ yarn test
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
 | T5.1 | 统一设置页 | TODO | 两个游戏共用语言、更新、数据目录设置，不影响游戏业务 |
-| T5.2 | 启动器显示最近更新时间 | TODO | 读取 `userData/<game>/` 最新 `time` |
+| T5.2 | 启动器显示最近更新时间 | TODO | 读取 `app.getPath('userData')/userData/<game>/` 最新 `time` |
 | T5.3 | 托盘快速切换 | TODO | 不破坏单进程单游戏约束 |
 
 当前不做：游戏主界面统一、共享 core、单窗口双游戏。

@@ -27,7 +27,7 @@
          ├─ 创建窗口
          ├─ 加载 dist/electron/games/<game>/renderer/index.html
          ├─ 注册该游戏的 IPC
-         └─ 读写 userData/<game>/
+         └─ 读写 app.getPath('userData')/userData/<game>/
 ```
 
 关键点：
@@ -131,7 +131,7 @@
 
 ### 5.1 本地文件
 
-每个账号一个文件：`userData/<game>/gacha-list-<uid>.json`。
+每个账号一个文件：`app.getPath('userData')/userData/<game>/gacha-list-<uid>.json`。开发态数据根目录是仓库根目录。
 
 原神：
 
@@ -235,7 +235,7 @@ autoUpdate, fetchFullHistory, hideNovice
         按卡池类型收集 → 按 id 合并
                 │
                 ▼
-        userData/<game>/gacha-list-<uid>.json
+        app.getPath('userData')/userData/<game>/gacha-list-<uid>.json
                 │
                 ▼
         渲染器统计 / Excel / UIGF / SRGF
@@ -328,7 +328,7 @@ autoUpdate, fetchFullHistory, hideNovice
 | 变量 | 设置方 | 用途 |
 | --- | --- | --- |
 | `WISH_GAME` | `bootstrap.js` | 当前游戏 id，决定数据子目录 |
-| `WISH_APP_ROOT` | `bootstrap.js` | 数据根目录（开发态是仓库根目录，打包后是安装目录），vendor 用它定位 `userData/` |
+| `WISH_APP_ROOT` | `bootstrap.js` | 数据根目录（开发态是仓库根目录，打包后是 `app.getPath('userData')`），vendor 用它定位 `userData/` |
 | `WISH_RENDERER` | `bootstrap.js` | 当前游戏渲染器 `index.html` 的绝对路径 |
 | `WISH_UPDATE_DISABLED` | `bootstrap.js` | 固定为 `1`，禁用上游自更新 |
 | `WISH_LAUNCHER_CHILD` | 启动器 spawn 子进程时 | 固定为 `1`，让 game 主进程跳过单实例锁 |
@@ -363,4 +363,4 @@ dist/electron/
 | 启动器 | 选择游戏的窗口，不加载任何抽卡业务模块 |
 | 契约测试 | 校验上游 IPC、数据格式、补丁标记的测试 |
 | 补丁 | `apply-vendor-patches.js` 产生的、带标记的最小改动 |
-| 便携数据目录 | 程序目录下的 `userData/`，不是系统 AppData |
+| 数据根目录 | 打包后为 `app.getPath('userData')`，不是安装目录；更新/重装不会覆盖 |

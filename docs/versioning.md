@@ -179,7 +179,7 @@ docs: 修复文档错字
 - [ ] `yarn test` 全部通过；
 - [ ] `yarn build:games` 两个游戏构建成功；
 - [ ] `yarn dev` 启动器正常，两个游戏都能进入；
-- [ ] 两个游戏的数据分别写入 `userData/<game>/`；
+- [ ] 两个游戏的数据分别写入 `app.getPath('userData')/userData/<game>/`；
 - [ ] Excel、UIGF 导出各验证一次；
 - [ ] 上游自更新仍处于禁用状态。
 
@@ -265,14 +265,14 @@ docs: 修复文档错字
 
 | 版本变化 | 数据兼容要求 |
 | --- | --- |
-| PATCH | 必须兼容现有 `userData/<game>/`，不得要求用户迁移 |
+| PATCH | 必须兼容现有数据根目录 `app.getPath('userData')/userData/<game>/`，不得要求用户迁移 |
 | MINOR | 尽量兼容；如新增字段，必须能读取旧数据 |
 | MAJOR | 可以提供迁移工具，但必须在发布说明中写清步骤 |
 
 额外约束：
 
 - `config.json` 中的 `urls` 使用应用名派生的密钥加密，不要在 PATCH/MINOR 中修改应用名。
-- `userData/<game>/` 结构变更属于破坏性变更。
+- 数据根目录或 `userData/<game>/` 结构变更属于破坏性变更。
 - UID 相同的数据不能只靠 UID 判断游戏归属。
 
 ## 10. 热修复

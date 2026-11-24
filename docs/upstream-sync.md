@@ -242,7 +242,7 @@ const update = async () => {
 - [ ] `yarn build:games` 两个游戏构建成功。
 - [ ] `yarn dev` 启动器显示两个游戏“已就绪”。
 - [ ] 分别进入两个游戏，加载数据、导出 Excel、导出 UIGF 各验证一次。
-- [ ] 数据仍然写入 `userData/<game>/`。
+- [ ] 数据仍然写入 `app.getPath('userData')/userData/<game>/`。
 - [ ] 更新 `docs/tasks.md` 或 PR 描述。
 
 ## 7. 版本与发布策略
