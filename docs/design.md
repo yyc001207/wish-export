@@ -428,6 +428,7 @@ yarn sync-upstream
 - [ ] 首次启动、升级、卸载路径验证。
 - [x] GitHub Release 自动发布验证（`release.yml` 已发布 v0.1.0、v0.1.1、v0.2.0）。
 - [x] README 用户文档（2026-11-24：下载安装、使用、数据位置、迁移、FAQ）。
+- [x] 许可证与署名（2026-11-24：`LICENSE` + `THIRD-PARTY-NOTICES.md`，随安装包分发）。
 
 ### M4 统一更新器
 

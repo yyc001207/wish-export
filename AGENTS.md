@@ -52,6 +52,7 @@ wish-export/
 ├─ AGENTS.md                     # 本文件
 ├─ package.json                  # 统一脚本与 Electron 运行时
 ├─ electron-builder.yml          # 打包配置
+├─ THIRD-PARTY-NOTICES.md        # 第三方许可与署名（随安装包分发）
 ├─ apps/
 │  └─ desktop/
 │     ├─ src/main/bootstrap.js   # 统一入口：启动器 / 单个分析工具

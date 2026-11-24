@@ -122,5 +122,11 @@ vendor/          导入后存在：两个上游的只读副本
 
 ## 许可证
 
-MIT。两个上游同样是 MIT，版权归各自作者所有，详见
-`vendor/genshin/LICENSE`、`vendor/starrail/LICENSE`（导入后存在）。
+本程序以 MIT 发布，Copyright (c) 2026 yyc001207，全文见 [LICENSE](LICENSE)。
+
+包含的两个上游项目同样是 MIT，版权归各自作者所有：
+
+- [genshin-wish-export](https://github.com/biuuu/genshin-wish-export)：Copyright (c) 2021 biuuu，许可全文见 `vendor/genshin/LICENSE`
+- [star-rail-warp-export](https://github.com/biuuu/star-rail-warp-export)：Copyright (c) 2023 biuuu，许可全文见 `vendor/starrail/LICENSE`
+
+完整的第三方版权与许可文本见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，该文件随安装包一起分发。

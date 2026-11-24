@@ -14,9 +14,11 @@
 
 ## 当前下一步
 
-**T3.6 许可证与署名**；同时等真机确认 M3 剩余的「首次启动 / 覆盖升级 / 卸载后数据保留」。
+**M3 剩余真机确认**（首次启动 / 覆盖升级 / 卸载后数据保留）；之后为 M4 统一更新器。
 
 T3.5 用户文档已于 2026-11-24 完成，根 README 重写为面向使用者的结构：下载安装、使用方法、数据位置与备份、两种旧版迁移、常见问题、开发入口。
+
+T3.6 许可证与署名已于 2026-11-24 完成：根 `LICENSE`（MIT，2026 yyc001207）；`THIRD-PARTY-NOTICES.md` 收录两个上游 MIT 全文与版权归属，并加入 `electron-builder.yml` 的 `files`，随安装包分发；README 注明来源与作者。
 
 M2 构建与启动器联调已于 2026-11-24 在真实桌面验证通过：启动器可打开并显示两个分析工具“已就绪”，两个分析工具分别可进入，导出正常；数据分别写入 `app.getPath('userData')/userData/genshin/` 与 `.../starrail/`，未出现 IPC 重复注册错误。
 
@@ -104,7 +106,7 @@ yarn test
 | T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.2.0-x64.exe`（59.8 MB）与 `.zip`（80.5 MB）；v0.1.0、v0.1.1、v0.2.0 已发布 |
 | T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个分析工具的 main/renderer 均存在 |
 | T3.5 | 用户文档 | DONE | 根 README 覆盖下载安装、使用流程、数据位置与备份、从统一版旧目录/原版独立程序迁移、常见问题、开发入口 |
-| T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
+| T3.6 | 许可证与署名 | DONE | 根 `LICENSE`（MIT，2026 yyc001207）；`THIRD-PARTY-NOTICES.md` 收录两个上游 MIT 全文与版权归属，并随安装包分发（`electron-builder.yml` files）；README 注明来源 |
 | T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0、v0.1.1、v0.2.0 实际运行成功，exe/zip/SHA256 已上传 |
 
 ### T3.1 实现提示
