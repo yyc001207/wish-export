@@ -4,6 +4,7 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, shell, Tray } = require('elec
 const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
+const { migrateLegacyUserData } = require('./migrate-user-data')
 
 const GAMES = {
   genshin: {
@@ -22,13 +23,31 @@ const GAME_IDS = Object.keys(GAMES)
 const IS_DEV = !app.isPackaged
 // 开发态：bootstrap.js 位于 apps/desktop/src/main，向上四级是仓库根目录
 const APP_DIR = IS_DEV ? path.resolve(__dirname, '../../../..') : app.getAppPath()
-// 数据目录放在安装目录下，保持便携模式；开发态就是仓库根目录
-const DATA_ROOT = IS_DEV ? APP_DIR : path.resolve(APP_DIR, '..', '..')
+// 打包后数据放到系统用户目录，更新/重装不会覆盖；开发态仍放在仓库根目录
+const DATA_ROOT = IS_DEV ? APP_DIR : app.getPath('userData')
 const GAMES_DIST = path.join(APP_DIR, 'dist', 'electron', 'games')
 const LAUNCHER_HTML = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'index.html')
 const LAUNCHER_PRELOAD = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'preload.js')
 const WISH_GAME_ARG = '--wish-game='
 const REQUESTED_GAME = getRequestedGame()
+
+if (!IS_DEV) {
+  try {
+    // 把旧安装目录里的 userData/<game>/ 复制到 AppData，只补齐缺失文件
+    const legacyRoot = path.resolve(APP_DIR, '..', '..', 'userData')
+    const targetRoot = path.join(DATA_ROOT, 'userData')
+    const { copied } = migrateLegacyUserData({
+      legacyRoot,
+      targetRoot,
+      games: GAME_IDS
+    })
+    if (copied > 0) {
+      console.log(`[data] 已从旧安装目录迁移 ${copied} 个文件到 ${targetRoot}`)
+    }
+  } catch (error) {
+    console.error('[data] 旧数据迁移失败：', error)
+  }
+}
 
 app.setAppUserModelId('org.wish-export.unified')
 
