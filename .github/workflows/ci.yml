@@ -1,10 +1,9 @@
 name: ci
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   contracts:
@@ -20,6 +19,7 @@ jobs:
         run: |
           node --check apps/desktop/src/main/bootstrap.js
           node --check apps/desktop/src/main/migrate-user-data.js
+          node --check apps/desktop/src/main/import-legacy-data.js
           node --check apps/desktop/src/launcher/preload.js
           node --check apps/desktop/src/launcher/launcher.js
           node --check scripts/apply-vendor-patches.js
@@ -27,6 +27,7 @@ jobs:
           node --check scripts/setup-vendor.js
           node --check tests/contracts/vendor-shape.test.js
           node --check tests/unit/migrate-user-data.test.js
+          node --check tests/unit/import-legacy-data.test.js
 
       - name: Contract tests
         run: node --test tests
