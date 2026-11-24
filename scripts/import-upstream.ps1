@@ -63,7 +63,7 @@ Invoke-SubtreeAdd -Prefix 'vendor/starrail' -Remote 'upstream-starrail'
 
 Write-Host ''
 Write-Host '[import] 完成。后续步骤：'
-Write-Host '  1. yarn patch-vendor    # 应用 4 类最小补丁（每个上游 4 处）'
+Write-Host '  1. yarn patch-vendor    # 应用 5 类最小补丁（每个上游 5 处）'
 Write-Host '  2. yarn setup           # 安装两个上游的构建依赖'
 Write-Host '  3. yarn test            # 运行契约测试'
 Write-Host '  4. yarn build:games     # 构建两套游戏产物'
