@@ -34,15 +34,14 @@
 - 两个上游构建依赖已安装，两个分析工具的 main 与 renderer 构建成功。
 - 启动器与两个分析工具界面已在真实桌面验证通过（2026-11-24）：启动器里两个分析工具都可选择，分别可打开、导出正常，数据按分析工具隔离落在 AppData。
 - 应用图标已覆盖 Windows 窗口、托盘、exe 与 NSIS 安装包。
-- Windows exe 与 zip 由 GitHub Actions 构建产出（v0.2.0：exe 59.8 MB / 62,696,935 B，zip 80.5 MB / 84,448,614 B）；本地不保留 `release/` 产物。
-- v0.1.0、v0.1.1、v0.2.0 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
+- Windows exe 与 zip 由 GitHub Actions 构建产出（v0.3.0：exe 59.8 MB / 62,703,772 B，zip 80.5 MB / 84,455,994 B）；本地不保留 `release/` 产物。
+- v0.1.0、v0.1.1、v0.2.0、v0.3.0 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
 - 原版独立程序的数据可在启动器里手动导入（T3.2，只复制不覆盖），2026-11-24 真机验证通过：导入、重复导入不覆盖、分析工具运行中入口禁用。
-- 统一更新器已实现（M4，2026-11-24）：启动器“检查更新”读取本仓库 GitHub Release，下载完整安装包、用 `SHA256SUMS.txt` 校验，备份 `userData/` 后由 NSIS 静默安装并重启；上游自更新仍保持禁用。
+- 统一更新器已实现并真机验证（M4，2026-11-24）：启动器“检查更新”读取本仓库 GitHub Release，下载完整安装包、用 `SHA256SUMS.txt` 校验，备份 `userData/` 后由 NSIS 静默安装并重启；已用 v0.2.0 → v0.3.0 走通检查、下载、校验、安装、重启全流程。上游自更新仍保持禁用。
 - 安装、覆盖升级、卸载路径已在真实桌面验证（2026-11-24）：数据始终在 `%APPDATA%\hoyo-gacha-export\`，覆盖安装与卸载程序都不影响。
 
 未完成（不要假装已存在）：
 
-- 统一更新器尚未在真实桌面点过“下载并安装”（当前环境无法访问 Release 资产的下载 CDN，只能验证到 API 与解析层）。
 - 单窗口统一 UI 与 M5 可选 UI 统一已明确不做（2026-11-24）。
 
 进度以 [docs/tasks.md](docs/tasks.md) 为准。

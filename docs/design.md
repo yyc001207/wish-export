@@ -320,6 +320,7 @@ release/
 
 - Electron 运行时只打包一份。
 - 两个渲染器各自带 Vue、element-plus、echarts，体积增加主要来自重复的 UI 依赖。
+- v0.3.0 发布版实测（GitHub Actions 构建）：exe 59.8 MB（62,703,772 B），zip 80.5 MB（84,455,994 B）。
 - v0.2.0 发布版实测（GitHub Actions 构建）：exe 59.8 MB（62,696,935 B），zip 80.5 MB（84,448,614 B）。
 - v0.1.1 发布版实测（GitHub Actions 构建）：exe 59.8 MB（62,693,202 B），zip 80.5 MB（84,444,599 B）；本地 v0.1.0 构建 248.5s、打包 33.2s（Windows x64，Node 20）。
 - 如果后续体积不可接受，再考虑将共享依赖外置（当前不做）。
@@ -434,7 +435,7 @@ yarn sync-upstream
 - [x] 原版独立程序 `userData` 的数据导入 UI（启动器手动入口已随 v0.2.0 发布；2026-11-24 真机验证通过：导入、重复导入不覆盖、运行中禁用）。
 - [x] Windows exe 安装包与 zip 打包验证。
 - [ ] 首次启动、升级、卸载路径验证。
-- [x] GitHub Release 自动发布验证（`release.yml` 已发布 v0.1.0、v0.1.1、v0.2.0）。
+- [x] GitHub Release 自动发布验证（`release.yml` 已发布 v0.1.0、v0.1.1、v0.2.0、v0.3.0）。
 - [x] README 用户文档（2026-11-24：下载安装、使用、数据位置、迁移、FAQ）。
 - [x] 许可证与署名（2026-11-24：`LICENSE` + `THIRD-PARTY-NOTICES.md`，随安装包分发）。
 
@@ -443,6 +444,7 @@ yarn sync-upstream
 - [x] 以 GitHub Release 为统一 manifest，更新包为完整安装包 + `SHA256SUMS.txt`。
 - [x] 上游 `WISH_UPDATE_DISABLED` 保留（防止覆盖统一目录），更新改由统一更新器接管。
 - [x] 更新失败回滚：下载/校验失败不触碰安装目录；安装前备份 `userData/`；中断后可手动重装。
+- 2026-11-24 真机验证通过：v0.2.0 启动器检查更新 → 发现 v0.3.0 → 下载、SHA256 校验、静默安装并自动重启。
 
 ### M5 可选：UI 统一（SKIP）
 
@@ -494,6 +496,6 @@ yarn sync-upstream
 1. 原版独立程序的老用户如何导入数据？已由 T3.2 的启动器“导入原版数据”覆盖（手动选目录，只复制不覆盖）。
 2. 是否需要保留原神的 Gist 上传功能？当前保留在 vendor 中，入口不变。
 3. 两个分析工具是否需要在启动器中显示最近一次数据更新时间？属于 M5，已决定不做。
-4. 安装包体积若明显增大，是否将 Vue/element-plus/echarts 外置为共享资源？需要产品确认（v0.2.0 实测 exe 59.8 MB、zip 80.5 MB）。
+4. 安装包体积若明显增大，是否将 Vue/element-plus/echarts 外置为共享资源？需要产品确认（v0.3.0 实测 exe 59.8 MB、zip 80.5 MB）。
 5. 是否支持 macOS/Linux？当前配置保留目标，但只在 Windows 上验证。
 6. 上游的 `RELAUNCH` 通道没有携带 `--wish-game`，重启后会回到启动器。上游自更新保持禁用，不会触发；统一更新器安装后由 NSIS `--force-run` 启动新版本，不经过上游 `RELAUNCH`。

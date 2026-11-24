@@ -14,11 +14,11 @@
 
 ## 当前下一步
 
-**M4 统一更新器已实现，待真机验证**（启动器“检查更新”→ 下载校验 → 静默安装重启）。M5 可选 UI 统一已按 2026-11-24 的决定整块标记 `SKIP`。
+**当前没有待办任务。** M4 统一更新器已于 2026-11-24 真机验证通过并随 v0.3.0 发布（启动器“检查更新”→ 下载校验 → 静默安装重启）；M5 可选 UI 统一已按 2026-11-24 的决定整块标记 `SKIP`。
 
 M3 三条安装路径已于 2026-11-24 真机确认：首次启动能把数据写入 `%APPDATA%\hoyo-gacha-export\`、覆盖安装后数据仍在、卸载程序后该目录保留。
 
-M4 实现要点：`apps/desktop/src/main/updater.js` 读取本仓库 GitHub Release（`releases/latest`），比较版本后下载 `Wish-Export-<version>-x64.exe`，用 `SHA256SUMS.txt` 校验，再通过 `updates/install-update.cmd` 等启动器退出后调用 NSIS 静默安装；上游 `WISH_UPDATE_DISABLED` 补丁永久保留，由统一更新器接管更新。
+M4 实现要点：`apps/desktop/src/main/updater.js` 读取本仓库 GitHub Release（`releases/latest`），比较版本后下载 `Wish-Export-<version>-x64.exe`，用 `SHA256SUMS.txt` 校验，再通过 `updates/install-update.cmd` 等启动器退出后调用 NSIS 静默安装；上游 `WISH_UPDATE_DISABLED` 补丁永久保留，由统一更新器接管更新。2026-11-24 已用 v0.2.0 → v0.3.0 真机验证：检查更新、下载校验、静默安装并重启全部通过。
 
 T3.5 用户文档已于 2026-11-24 完成，根 README 重写为面向使用者的结构：下载安装、使用方法、数据位置与备份、两种旧版迁移、常见问题、开发入口。
 
@@ -38,7 +38,7 @@ T3.2 原版数据导入已于 2026-11-24 真机验证通过：启动器“导入
 | T0.4 | 统一入口 bootstrap | DONE | `apps/desktop/src/main/bootstrap.js` |
 | T0.5 | 启动器页面 | DONE | `apps/desktop/src/launcher/` |
 | T0.6 | 导入 / 同步 / 补丁 / 构建脚本 | DONE | `scripts/` |
-| T0.7 | 契约测试与 CI | DONE | `tests/contracts/`、`.github/workflows/`；CI 已在 v0.1.0、v0.1.1、v0.2.0 实际运行并产出产物 |
+| T0.7 | 契约测试与 CI | DONE | `tests/contracts/`、`.github/workflows/`；CI 已在 v0.1.0、v0.1.1、v0.2.0、v0.3.0 实际运行并产出产物 |
 | T0.8 | 本地验证 | DONE | `node --check` 全部通过；`yarn test` 9 项全部按预期跳过，退出码 0 |
 | T0.9 | 版本迭代规则 | DONE | `docs/versioning.md`；AGENTS、README、开发与同步文档已建立引用 |
 
@@ -84,7 +84,7 @@ yarn test
 | T2.4 | 星铁入口验证 | DONE | 真实桌面验证：入口加载正常，导出正常 |
 | T2.5 | 数据隔离验证 | DONE | 真实运行确认数据分别写入 `%APPDATA%\hoyo-gacha-export\userData\genshin\`、`...\starrail\` |
 | T2.6 | 切换与单实例验证 | DONE | 真机验证：运行中入口禁用，关闭后可切到另一分析工具；未出现 IPC 重复注册错误 |
-| T2.7 | 记录体积与耗时 | DONE | v0.2.0（Actions）exe 59.8 MB（62,696,935 B）、zip 80.5 MB（84,448,614 B）；v0.1.1 为 exe 62,693,202 B、zip 84,444,599 B；本地构建 248.5s、打包 33.2s（v0.1.0 记录） |
+| T2.7 | 记录体积与耗时 | DONE | v0.3.0（Actions）exe 59.8 MB（62,703,772 B）、zip 80.5 MB（84,455,994 B）；v0.2.0 为 62,696,935 / 84,448,614 B；v0.1.1 为 exe 62,693,202 B、zip 84,444,599 B；本地构建 248.5s、打包 33.2s（v0.1.0 记录） |
 | T2.8 | 托盘常驻与分析工具子进程 | DONE | 真机验证：启动器常驻托盘、分析工具子进程独立、入口禁用/恢复均正常 |
 
 验收时重点观察：
@@ -107,11 +107,11 @@ yarn test
 | --- | --- | --- | --- |
 | T3.1 | 统一版旧安装目录数据迁移 | DONE | 启动时复制 `<旧安装目录>/userData/<game>` 到 `app.getPath('userData')/userData/<game>`；只补齐缺失文件、不覆盖、不删除；有单测 |
 | T3.2 | 原版独立程序数据导入 UI | DONE | 启动器提供“导入原版数据”入口，默认定位原版安装目录，选目录后选择游戏归属，只复制 `config.json` 与 `gacha-list-*.json`、不覆盖；单测 6 项通过；已随 v0.2.0 发布；2026-11-24 真机验证通过（导入、重复导入不覆盖、运行中禁用） |
-| T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.2.0-x64.exe`（59.8 MB）与 `.zip`（80.5 MB）；v0.1.0、v0.1.1、v0.2.0 已发布 |
+| T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.3.0-x64.exe`（59.8 MB）与 `.zip`（80.5 MB）；v0.1.0、v0.1.1、v0.2.0、v0.3.0 已发布 |
 | T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个分析工具的 main/renderer 均存在 |
 | T3.5 | 用户文档 | DONE | 根 README 覆盖下载安装、使用流程、数据位置与备份、从统一版旧目录/原版独立程序迁移、常见问题、开发入口 |
 | T3.6 | 许可证与署名 | DONE | 根 `LICENSE`（MIT，2026 yyc001207）；`THIRD-PARTY-NOTICES.md` 收录两个上游 MIT 全文与版权归属，并随安装包分发（`electron-builder.yml` files）；README 注明来源 |
-| T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0、v0.1.1、v0.2.0 实际运行成功，exe/zip/SHA256 已上传 |
+| T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0、v0.1.1、v0.2.0、v0.3.0 实际运行成功，exe/zip/SHA256 已上传 |
 | T3.8 | 安装、覆盖升级与卸载路径验证 | DONE | 2026-11-24 真机确认：首次启动数据写入 `%APPDATA%\hoyo-gacha-export\`；覆盖安装后数据保留；卸载程序后该目录保留 |
 
 ### T3.1 实现提示
@@ -133,7 +133,7 @@ yarn test
 
 真机验证步骤：
 
-1. `yarn build:games` 后 `yarn dev`（或运行已安装的 v0.2.0）；
+1. `yarn build:games` 后 `yarn dev`（或运行已安装的 v0.3.0）；
 2. 点击“导入原版数据”，确认文件选择框默认落在原版安装目录，也可手动选择；
 3. 选中后出现“这份数据属于哪个游戏？”模态框，分别对原神、星铁各导入一次；
 4. 确认提示“已导入 N 个文件”，`%APPDATA%\hoyo-gacha-export\userData\<game>\` 出现 `gacha-list-*.json` / `config.json`；
@@ -159,9 +159,9 @@ yarn test
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
 | T4.1 | 更新器设计 | DONE | `docs/design.md` §11 与 `docs/architecture.md` §5.4：以 GitHub Release 为 manifest，exe + `SHA256SUMS.txt` 为更新包，语义化版本比较，失败不破坏现有安装 |
-| T4.2 | 实现统一更新器 | DONE | `apps/desktop/src/main/updater.js` 检查/下载/校验；启动器提供“检查更新”、下载进度、“立即安装并重启”；7 项单测通过；`checkForUpdate` 已对真实 GitHub API 跑通（0.1.0 → 0.2.0） |
+| T4.2 | 实现统一更新器 | DONE | `apps/desktop/src/main/updater.js` 检查/下载/校验；启动器提供“检查更新”、下载进度、“立即安装并重启”；7 项单测通过；2026-11-24 用 v0.2.0 → v0.3.0 真机验证通过 |
 | T4.3 | 关闭临时禁用 | DONE | 上游 `WISH_UPDATE_DISABLED` 补丁保留（上游更新会覆盖统一目录）；统一更新器接管更新，`bootstrap.js` 中的注释与 `docs/upstream-sync.md` 已说明 |
-| T4.4 | 更新失败回滚 | DONE | 下载失败/校验失败删除临时文件并提示，不触碰安装目录；安装前把 `userData/` 备份到 `updates/userData-backup-<version>/`；安装由 NSIS 执行，中断后可从 Releases 重新安装，数据不受影响 |
+| T4.4 | 更新失败回滚 | DONE | 下载失败/校验失败删除临时文件并提示，不触碰安装目录；安装前把 `userData/` 备份到 `updates/userData-backup-<version>/`；安装由 NSIS 执行，中断后可从 Releases 重新安装，数据不受影响；2026-11-24 真机验证安装与重启成功 |
 
 约束：
 
@@ -176,7 +176,7 @@ yarn test
 - 关键约束：更新器只用 Node 内置 `https`/`crypto`，不引入依赖；`updater.js` 不在顶层 `require('electron')`，便于单测；开发态（`!app.isPackaged`）不检查更新。
 - 下载目录：`app.getPath('userData')/updates/`；安装包与备份都在这里，卸载程序不会删除。
 - 验证命令：`node tests/unit/updater.test.js`、`node tests/contracts/vendor-shape.test.js`、`node --check apps/desktop/src/main/updater.js`。
-- 真机验证：安装 v0.2.0 → 启动器点“检查更新” → 若能访问 GitHub 应显示“已是最新版本”；发布更高版本后应能下载、校验并静默安装。
+- 真机验证（2026-11-24 已完成）：安装 v0.2.0 → 启动器点“检查更新” → 发现 v0.3.0 → “下载并安装” → 下载、SHA256 校验、静默安装并自动重启为新版本。
 
 ## M5：可选 UI 统一
 
@@ -215,7 +215,7 @@ yarn test
 | 旧版数据迁移策略 | 需要产品确认 | 自动扫描还是手动选择目录 |
 | 统一版 `appId` 与发布渠道 | 需要产品确认 | 影响旧用户升级感知 |
 | macOS/Linux 支持 | 需要环境 | 当前只在 Windows 验证 |
-| 安装包体积是否可接受 | 需要产品确认 | 已实测 v0.2.0：exe 59.8 MB（62,696,935 B）、zip 80.5 MB（84,448,614 B） |
+| 安装包体积是否可接受 | 需要产品确认 | 已实测 v0.3.0：exe 59.8 MB（62,703,772 B）、zip 80.5 MB（84,455,994 B） |
 
 ## 更新规则
 
