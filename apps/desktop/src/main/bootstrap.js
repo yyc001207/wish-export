@@ -1,6 +1,6 @@
 'use strict'
 
-const { app, BrowserWindow, dialog, ipcMain, Menu, shell, Tray } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell, Tray } = require('electron')
 const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -28,6 +28,8 @@ const DATA_ROOT = IS_DEV ? APP_DIR : app.getPath('userData')
 const GAMES_DIST = path.join(APP_DIR, 'dist', 'electron', 'games')
 const LAUNCHER_HTML = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'index.html')
 const LAUNCHER_PRELOAD = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'preload.js')
+const APP_ICON = path.join(APP_DIR, 'apps', 'desktop', 'assets', 'icon.png')
+const TRAY_ICON = path.join(APP_DIR, 'apps', 'desktop', 'assets', 'tray.png')
 const WISH_GAME_ARG = '--wish-game='
 const REQUESTED_GAME = getRequestedGame()
 
@@ -50,6 +52,12 @@ if (!IS_DEV) {
 }
 
 app.setAppUserModelId('org.wish-export.unified')
+
+if (fs.existsSync(APP_ICON)) {
+  app.on('browser-window-created', (event, window) => {
+    if (!window.isDestroyed()) window.setIcon(APP_ICON)
+  })
+}
 
 if (GAMES[REQUESTED_GAME]) {
   startGame(REQUESTED_GAME)
@@ -183,6 +191,7 @@ function startLauncher () {
       show: false,
       autoHideMenuBar: true,
       backgroundColor: '#0e1116',
+      icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
       webPreferences: {
         preload: LAUNCHER_PRELOAD,
         contextIsolation: true,
@@ -211,9 +220,16 @@ function startLauncher () {
     try {
       let icon = null
       try {
-        icon = await app.getFileIcon(process.execPath, { size: 'small' })
+        icon = nativeImage.createFromPath(TRAY_ICON)
       } catch (error) {
         icon = null
+      }
+      if (!icon || icon.isEmpty()) {
+        try {
+          icon = await app.getFileIcon(process.execPath, { size: 'small' })
+        } catch (error) {
+          icon = null
+        }
       }
       tray = new Tray(icon || process.execPath)
       tray.setToolTip('Wish Export')

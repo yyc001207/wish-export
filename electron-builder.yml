@@ -9,14 +9,19 @@ files:
   - LICENSE
   - apps/desktop/src/main/**/*
   - apps/desktop/src/launcher/**/*
+  - apps/desktop/assets/**/*
   - dist/electron/games/**/*
 win:
+  icon: build/icon.ico
   target:
     - nsis
     - zip
   artifactName: Wish-Export-${version}-${arch}.${ext}
 nsis:
   artifactName: Wish-Export-${version}-${arch}.${ext}
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
