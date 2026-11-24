@@ -5,6 +5,12 @@ const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
 const { migrateLegacyUserData } = require('./migrate-user-data')
+const {
+  findLegacyDataDirHint,
+  importLegacyData,
+  listLegacyDataFiles,
+  resolveLegacyDataDir
+} = require('./import-legacy-data')
 
 const GAMES = {
   genshin: {
@@ -137,6 +143,8 @@ function startLauncher () {
     return shell.openPath(dir)
   })
   ipcMain.handle('QUIT_APP', () => quitApp())
+  ipcMain.handle('IMPORT_PICK_DIR', () => pickLegacyDir())
+  ipcMain.handle('IMPORT_LEGACY_DATA', (event, payload) => importLegacy(payload))
 
   app.whenReady().then(async () => {
     await createTray()
@@ -328,6 +336,62 @@ function startLauncher () {
     isQuitting = true
     stopGameProcess()
     app.quit()
+  }
+
+  /**
+   * 让用户选择原版独立程序的数据目录。
+   * 原版数据在安装目录的 userData/ 下，也允许直接选 userData 或数据目录本身。
+   */
+  async function pickLegacyDir () {
+    try {
+      const options = {
+        title: '选择原版程序的数据目录',
+        buttonLabel: '选择',
+        properties: ['openDirectory'],
+        defaultPath: findLegacyDataDirHint() || undefined
+      }
+      const parent = win && !win.isDestroyed() ? win : undefined
+      const result = parent
+        ? await dialog.showOpenDialog(parent, options)
+        : await dialog.showOpenDialog(options)
+
+      if (result.canceled || !result.filePaths.length) return { canceled: true }
+
+      const selected = result.filePaths[0]
+      const dir = resolveLegacyDataDir(selected)
+      if (!dir) return { canceled: false, dir: selected, count: 0 }
+      return { canceled: false, dir, count: listLegacyDataFiles(dir).length }
+    } catch (error) {
+      console.error('[import] 选择目录失败：', error)
+      return { canceled: true, error: error.message }
+    }
+  }
+
+  /**
+   * 把原版数据复制到 userData/<game>/，只复制不覆盖。
+   * 游戏运行中允许导入会与上游读写同一目录，直接拒绝。
+   */
+  function importLegacy (payload) {
+    const { dir, game } = payload || {}
+
+    if (!GAMES[game]) return { ok: false, message: '未知的游戏标识' }
+    if (runningGame) {
+      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前游戏` }
+    }
+
+    try {
+      const sourceDir = resolveLegacyDataDir(dir)
+      if (!sourceDir) {
+        return { ok: false, message: '没有在所选目录中找到 config.json 或 gacha-list-*.json' }
+      }
+
+      const targetDir = path.join(DATA_ROOT, 'userData', game)
+      const { copied, skipped } = importLegacyData({ sourceDir, targetDir })
+      return { ok: true, copied, skipped, targetDir }
+    } catch (error) {
+      console.error('[import] 导入旧数据失败：', error)
+      return { ok: false, message: error.message }
+    }
   }
 
   function stopGameProcess () {

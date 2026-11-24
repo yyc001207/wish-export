@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('launcher', {
   getStatus: () => ipcRenderer.invoke('LAUNCHER_STATUS'),
   launch: id => ipcRenderer.invoke('LAUNCH_GAME', id),
   openDataDir: () => ipcRenderer.invoke('OPEN_DATA_DIR'),
+  pickLegacyDir: () => ipcRenderer.invoke('IMPORT_PICK_DIR'),
+  importLegacyData: (dir, game) => ipcRenderer.invoke('IMPORT_LEGACY_DATA', { dir, game }),
   quit: () => ipcRenderer.invoke('QUIT_APP'),
   onStatusChanged: callback => {
     const listener = (event, status) => callback(status)

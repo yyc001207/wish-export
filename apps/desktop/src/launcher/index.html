@@ -27,11 +27,24 @@
       <footer class="footer">
         <span id="version" class="version">v0.0.0</span>
         <div class="footer-actions">
+          <button id="import-data" class="ghost-button" type="button">导入原版数据</button>
           <button id="open-data" class="ghost-button" type="button">打开数据目录</button>
           <button id="quit" class="ghost-button" type="button">退出</button>
         </div>
       </footer>
     </main>
+
+    <div id="import-dialog" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
+        <h2 id="import-title">这份数据属于哪个游戏？</h2>
+        <p id="import-detail" class="modal-detail"></p>
+        <div class="modal-actions">
+          <button id="import-genshin" class="primary-button" type="button">原神</button>
+          <button id="import-starrail" class="primary-button" type="button">崩坏：星穹铁道</button>
+          <button id="import-cancel" class="ghost-button" type="button">取消</button>
+        </div>
+      </div>
+    </div>
 
     <script src="./launcher.js"></script>
   </body>
