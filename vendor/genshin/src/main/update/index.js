@@ -26,7 +26,8 @@ const appPath = isDev ? path.resolve(__dirname, '../../', 'update-dev/app'): app
 const updatePath = isDev ? path.resolve(__dirname, '../../', 'update-dev/download') : path.resolve(appPath, '..', '..', 'update')
 
 const update = async () => {
-  if (isDev) return
+  // [wish-export patch] 统一入口禁用上游自更新，避免覆盖统一安装目录
+  if (isDev || process.env.WISH_UPDATE_DISABLED === '1') return
   try {
     const url = 'https://genshin-gacha-export.danmu9.com/update'
     const res = await fetch(`${url}/manifest.json?t=${Math.floor(Date.now() / (1000 * 60 * 10))}`)

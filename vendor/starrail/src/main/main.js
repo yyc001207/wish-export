@@ -13,7 +13,11 @@ let win = null
 function createWindow() {
   win = initWindow()
   win.setMenuBarVisibility(false)
-  isDev ? win.loadURL(`http://localhost:${process.env.PORT}`) : win.loadFile('dist/electron/renderer/index.html')
+  // [wish-export patch] 渲染进程入口由统一入口注入
+  const rendererUrl = process.env.WISH_DEV_SERVER_URL
+  const rendererFile = process.env.WISH_RENDERER || 'dist/electron/renderer/index.html'
+  if (rendererUrl) win.loadURL(rendererUrl)
+  else win.loadFile(rendererFile)
   if (isDev) {
     win.webContents.openDevTools({ mode: 'undocked', activate: true })
   }

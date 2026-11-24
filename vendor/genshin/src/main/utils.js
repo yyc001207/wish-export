@@ -13,8 +13,10 @@ const readdir = util.promisify(fs.readdir)
 
 const isDev = !app.isPackaged
 
-const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
-const userDataPath = path.resolve(appRoot, 'userData')
+// [wish-export patch] 统一入口注入数据根目录
+const appRoot = process.env.WISH_APP_ROOT || (isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..'))
+// [wish-export patch] 每个游戏使用独立数据目录
+const userDataPath = path.resolve(appRoot, 'userData', process.env.WISH_GAME || 'default')
 const userPath = app.getPath('userData')
 
 let win = null
