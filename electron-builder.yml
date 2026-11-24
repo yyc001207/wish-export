@@ -12,7 +12,17 @@ files:
   - dist/electron/games/**/*
 win:
   target:
+    - nsis
     - zip
+  artifactName: Wish-Export-${version}-${arch}.${ext}
+nsis:
+  artifactName: Wish-Export-${version}-${arch}.${ext}
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Wish Export
 mac:
   target:
     - dmg
