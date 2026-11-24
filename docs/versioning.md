@@ -147,6 +147,28 @@ chore(release): v0.2.0
 
 不要把版本号修改混在功能提交里。
 
+### 6.1 提交粒度
+
+一次提交只包含一类变更：
+
+- `type` 必须唯一，禁止把 `feat`、`fix`、`docs`、`build`、`ci` 混在一个提交；
+- 同一类变更可以跨多个文件，放在同一个提交；
+- 不同类变更必须拆成多个提交；
+- 纯格式化、重命名、删除文件单独提交；
+- 版本号提交独立；
+- 提交前用 `git diff --stat` 检查；如果一个提交里出现多种 type，拆开暂存。
+
+示例：
+
+错误：`feat(release): 新增发布工作流并修复文档错字`
+
+正确：
+
+```text
+ci(release): 新增 GitHub Release 工作流
+docs: 修复文档错字
+```
+
 ## 7. 发布流程
 
 发布前必须满足：
@@ -174,13 +196,13 @@ chore(release): v0.2.0
    yarn dev
    ```
 
-4. 打包：
+4. 打包（产出 NSIS 安装包与 zip）：
 
    ```powershell
    yarn package
    ```
 
-5. 在 Windows 上解压 `release/` 产物，按第 7 节清单手工验证。
+5. 在 Windows 上安装 exe 或解压 zip，按第 7 节清单手工验证。
 6. 提交版本号：
 
    ```powershell
@@ -201,8 +223,8 @@ chore(release): v0.2.0
    git push origin v0.1.1
    ```
 
-9. 上传 `release/` 中的安装包。
-10. 创建 GitHub Release，填写第 8 节的发布说明。
+9. 推送标签后会触发 `.github/workflows/release.yml`，自动构建 exe/zip、生成 SHA256 并创建 GitHub Release。
+10. 如果自动发布失败，查看 Actions 日志，或手动上传 `release/` 产物。
 
 推送与打标签属于人工确认操作，AI 代理不得自行执行。
 
@@ -235,7 +257,7 @@ chore(release): v0.2.0
 
 ### 校验
 
-- 安装包：Wish Export-X.Y.Z-win.zip
+- 安装包：Wish-Export-X.Y.Z-x64.exe / Wish-Export-X.Y.Z-x64.zip
 - 构建时间：YYYY-MM-DD HH:mm
 ```
 
@@ -301,6 +323,7 @@ chore(release): v0.2.0
 
 - 不得自行执行 `git tag`、`git push`、`git commit`，除非用户明确要求。
 - 不得自行提升版本号，除非任务明确标注为「发布」。
+- 提交必须遵循 6.1 的粒度规则，不同 `type` 拆开。
 - 发布前必须逐项执行第 7 节检查清单。
 - 不得修改已发布标签。
 - 版本规则变更必须更新本文，并在提交中说明原因。

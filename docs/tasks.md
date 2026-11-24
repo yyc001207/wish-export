@@ -107,10 +107,11 @@ yarn test
 | --- | --- | --- | --- |
 | T3.1 | 旧版数据导入 | TODO | 首次启动可识别旧 `userData/`；导入后数据出现在 `userData/<game>/`；旧文件保留 |
 | T3.2 | 旧数据导入 UI | TODO | 启动器提供“导入旧数据”入口；可选择旧安装目录 |
-| T3.3 | Windows 打包 | TODO | `yarn package` 产出 zip；解压后启动器可用 |
+| T3.3 | Windows 打包 | TODO | `yarn package` 产出 exe 安装包与 zip；安装/解压后启动器可用 |
 | T3.4 | 打包后路径验证 | TODO | 打包后 `app.getAppPath()`、`WISH_RENDERER`、`userData` 路径正确 |
 | T3.5 | 用户文档 | TODO | 根 README 说明安装、使用、数据位置、从旧版迁移 |
 | T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
+| T3.7 | GitHub Releases 自动发布 | DONE | `.github/workflows/release.yml`：推送 `v*` 标签自动上传 exe/zip/SHA256；尚未在远端实际发版 |
 
 ### T3.1 实现提示
 
@@ -122,6 +123,12 @@ yarn test
 - 导入后提示需要重启或刷新数据。
 
 ### T3.3 打包提示
+
+- Windows 产物是 NSIS 安装包（exe）与 zip 便携包，产物名包含版本与架构；
+- NSIS 默认安装到当前用户目录，避免 Program Files 写入权限问题；
+- 数据写在安装目录的 `userData/<game>/`，安装/卸载前需要备份；
+- 安装包未签名，SmartScreen 可能提示未知发布者；
+- 推送 `v*` 标签会触发 `.github/workflows/release.yml`，自动上传 Release 资产。
 
 - 当前 `electron-builder.yml` 已配置 `asar: false`；
 - 不要打包 `vendor/` 与 `node_modules/`；

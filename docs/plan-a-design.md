@@ -275,7 +275,8 @@ yarn build:games
 
 ```text
 release/
-└─ Wish Export-0.1.0-win.zip
+├─ Wish-Export-0.1.0-x64.exe      # NSIS 安装包
+└─ Wish-Export-0.1.0-x64.zip      # 便携包
    └─ Wish Export/
       ├─ Wish Export.exe
       ├─ resources/app/
@@ -294,6 +295,8 @@ release/
 - `main`：`apps/desktop/src/main/bootstrap.js`。
 - 打包只包含统一入口、启动器、两个游戏产物，不包含 `vendor/` 源码与 `node_modules`。
 - `electron-builder.yml` 中 `productName`、`appId` 使用新值，旧版不会自动升级到统一版。
+- Windows 产物为 NSIS exe 安装包与 zip 便携包；安装包默认安装到当前用户目录，数据写在安装目录下。
+- 安装包未签名，Windows SmartScreen 可能提示未知发布者；卸载前需要备份 `userData`。
 
 ### 9.3 体积
 
@@ -362,6 +365,7 @@ yarn sync-upstream
 | 原神老依赖在 Node 20 下构建失败 | 中 | 无法构建 | 固定 Node 18 或单独升级构建链；先记录实际错误再处理 |
 | 上游自更新覆盖统一目录 | 低（已禁用） | 安装损坏 | 保留 `WISH_UPDATE_DISABLED` 补丁；统一更新器上线前不放开 |
 | 旧用户数据丢失 | 中 | 用户投诉 | M3 实现导入；文档提供手动迁移路径 |
+| NSIS 安装目录 | 数据写在安装目录；只读目录写入失败，卸载可能删除数据 | 默认安装到用户目录；发布说明提示备份 `userData` |
 | 安装包体积增加 | 低 | 下载变慢 | M2 记录实际体积；必要时做依赖外置 |
 | 两个游戏同时运行导致代理端口冲突 | 低 | 代理失败 | 单实例锁 + 启动器只允许一个游戏运行 |
 | 许可证/署名缺失 | 低 | 合规问题 | 保留两个上游 LICENSE，README 注明来源 |
@@ -398,8 +402,9 @@ yarn sync-upstream
 ### M3 数据迁移与打包
 
 - [ ] 旧版 `userData` 导入。
-- [ ] Windows zip 打包验证。
+- [ ] Windows exe 安装包与 zip 打包验证。
 - [ ] 首次启动、升级、卸载路径验证。
+- [ ] GitHub Release 自动发布验证。
 - [ ] README 用户文档。
 
 ### M4 统一更新器

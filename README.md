@@ -26,6 +26,17 @@
 - [docs/versioning.md](docs/versioning.md)：版本号、提交规范、发布与回滚
 - [docs/tasks.md](docs/tasks.md)：任务看板与验收标准
 
+## 下载
+
+发布后可在 GitHub Releases 下载：
+
+- `Wish-Export-<version>-x64.exe`：NSIS 安装包，默认安装到当前用户目录；
+- `Wish-Export-<version>-x64.zip`：便携包，解压到可写目录后运行；
+- `SHA256SUMS.txt`：校验文件。
+
+数据保存在程序目录的 `userData/<game>/`。安装、卸载或升级前请备份该目录。
+安装包未签名，Windows SmartScreen 可能提示未知发布者。
+
 ## 快速开始（开发）
 
 ```powershell

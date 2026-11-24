@@ -247,22 +247,33 @@ electron-builder
 
 输出：`release/`。
 
+产物示例：
+
+```text
+release/
+├─ Wish-Export-0.1.0-x64.exe   # NSIS 安装包
+└─ Wish-Export-0.1.0-x64.zip   # 便携包
+```
+
 当前配置：
 
 - `appId`：`org.wish-export.unified`
 - `productName`：`Wish Export`
 - `asar: false`
-- Windows：zip
+- Windows：NSIS 安装包（exe）+ zip 便携包
 - macOS：dmg
 - Linux：deb
 
 打包检查：
 
+- `release/Wish-Export-<version>-x64.exe` 存在；
+- `release/Wish-Export-<version>-x64.zip` 存在；
 - `release/win-unpacked/resources/app/apps/desktop/src/main/bootstrap.js` 存在；
 - `resources/app/dist/electron/games/genshin/main/main.js` 存在；
 - `resources/app/dist/electron/games/starrail/main/main.js` 存在；
-- 双击 exe 能打开启动器；
-- 进入游戏后数据写入安装目录的 `userData/<game>/`。
+- 安装 exe 或解压 zip 后，双击程序能打开启动器；
+- 进入游戏后数据写入安装目录的 `userData/<game>/`；
+- 不要把程序安装到只读目录，安装/卸载前备份 `userData`。
 
 当前只在 Windows 上验证。macOS/Linux 配置保留但未验证，不要声称已支持。
 
@@ -273,14 +284,16 @@ electron-builder
 1. 确认工作区干净，上游已同步到预期快照；
 2. `yarn patch-vendor`、`yarn test`、`yarn build:games` 全部通过；
 3. 按版本规则修改根 `package.json` 的 `version`；
-4. `yarn package`，在 Windows 上解压并手工验证两个游戏；
+4. `yarn package`，安装 exe 或解压 zip 后手工验证两个游戏；
 5. 提交 `chore(release): vX.Y.Z`，打附注标签 `vX.Y.Z`；
-6. 上传 `release/` 产物，按版本规则填写发布说明。
+6. 推送标签，由 `.github/workflows/release.yml` 自动上传 exe/zip/SHA256 并创建 GitHub Release。
 
 注意：
 
+- GitHub Release 只在推送 `v*` 标签时触发，且 `package.json` 版本必须与标签一致；
 - 发布说明必须记录两个上游的 `git-subtree-split` 与星铁 `idJson` 版本；
 - 旧版不会自动升级到统一版，发布说明要写清迁移方式；
+- 安装包未签名，Windows SmartScreen 可能提示未知发布者；
 - 不要恢复上游自更新：`WISH_UPDATE_DISABLED` 必须保持为 `1`，直到统一更新器上线；
 - 不要自行打标签或推送，除非任务明确要求发布。
 

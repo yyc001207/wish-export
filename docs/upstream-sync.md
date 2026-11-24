@@ -57,7 +57,7 @@ yarn dev            # 打开启动器
 
 - `vendor/` 目录不能预先存在。如果已经存在，先移走并提交，再重新导入。
 - 首次导入会产生 git 提交，这是 `git subtree add` 的正常行为。
-- 当前仓库里已有的 `genshin-wish-export/`、`star-rail-warp-export/` 两个克隆只作为参考，不参与构建。导入完成后可以自行决定是否保留。
+- 旧的两个克隆已删除；如需参考，请重新克隆到仓库外的目录（例如 `...\code\_upstream-reference\`），不要放到仓库根目录。根目录 `.gitignore` 保留了忽略规则，防止误提交。
 - Git for Windows 可能输出 `git-subtree: line 877: echo: write error: Bad file descriptor`。只要 `git log` 中有 `as 'vendor/<game>'` 的提交，且 `vendor/<game>/package.json` 存在，导入就是成功的；脚本按实际结果判定，不依赖退出码。
 
 导入成功的验证命令：
@@ -70,7 +70,7 @@ Test-Path vendor/starrail/package.json
 
 ### 2.1 本地已有上游克隆怎么办
 
-根目录下的 `genshin-wish-export/`、`star-rail-warp-export/` 是各自独立的 git 仓库，根仓库不会跟踪它们的内容。`yarn import-upstream` 使用远程 URL，不读取这两个目录，所以它们不影响导入。
+如果你在仓库根目录重新克隆了上游，它们会是各自独立的 git 仓库，根仓库不会跟踪它们的内容。`yarn import-upstream` 使用远程 URL，不读取这些目录，所以它们不影响导入。
 
 处理方式：
 
@@ -90,7 +90,7 @@ Test-Path vendor/starrail/package.json
   ```
 
   但后续同步脚本与 CI 使用 GitHub URL，建议导入后统一改回远程 URL；本地路径的 `.git` 不会被带进 `vendor/`。
-- 删除本地克隆不会影响统一仓库：`vendor/` 已有代码，GitHub 上游也随时可以重新克隆。删除前至少完成一次 `yarn build:games` 和启动器验证。
+- 旧克隆已删除，不影响统一仓库：`vendor/` 已有代码，GitHub 上游随时可以重新克隆。以后如重新克隆，删除前至少完成一次 `yarn build:games` 和启动器验证。
 - 不要用 `git add .` 把这两个目录提交进统一仓库；如果它们出现在 `git status` 里，说明 `.gitignore` 规则被改动了。
 
 ## 3. 日常同步
