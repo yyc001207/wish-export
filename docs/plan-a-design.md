@@ -378,9 +378,9 @@ yarn sync-upstream
 
 验收：`yarn test` 在未导入 vendor 时全部跳过且退出码为 0。
 
-### M1 上游导入与补丁（待执行）
+### M1 上游导入与补丁（进行中）
 
-- [ ] `yarn import-upstream` 导入两个上游。
+- [x] `yarn import-upstream` 导入两个上游（原神 `c4675ab`、星铁 `8a0b664`）。
 - [ ] `yarn patch-vendor` 应用 4 类补丁（每个上游 4 处）。
 - [ ] `yarn setup` 安装依赖。
 - [ ] `yarn test` 通过。

@@ -13,8 +13,8 @@
 
 ## 当前状态
 
-方案 A 的骨架与文档已完成，`vendor/` 尚未导入，尚未发布。进度见
-[docs/tasks.md](docs/tasks.md)。
+方案 A 的骨架与文档已完成，两个上游已导入 `vendor/`。补丁、依赖安装与构建尚未执行，
+进度见 [docs/tasks.md](docs/tasks.md)。
 
 ## 文档
 

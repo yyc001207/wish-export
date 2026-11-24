@@ -14,13 +14,20 @@
 
 ## 当前下一步
 
-**T1.1：导入两个上游到 `vendor/`。**
+**T1.2：应用 vendor 补丁。**
 
-这是所有后续任务的前置条件。执行前确认：
+T1.1 已完成：
 
-- 根仓库已提交；
-- 工作区没有未提交的已跟踪改动；
-- 用户同意执行会产生 git 提交的 `git subtree add`。
+- `vendor/genshin`：上游提交 `c4675ab`
+- `vendor/starrail`：上游提交 `8a0b664`
+
+执行：
+
+```powershell
+yarn patch-vendor
+yarn setup
+yarn test
+```
 
 ## M0：文档与骨架（DONE）
 
@@ -40,13 +47,13 @@
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T1.1 | 导入两个上游 | TODO | `vendor/genshin`、`vendor/starrail` 存在；`git log` 有两条 `git-subtree-dir` 提交 |
+| T1.1 | 导入两个上游 | DONE | `vendor/genshin`（c4675ab）、`vendor/starrail`（8a0b664）已存在；两条 subtree 提交已生成 |
 | T1.2 | 应用 vendor 补丁 | TODO | `yarn patch-vendor` 首次输出应用 8 处（每个上游 4 处）；源码含 4 类标记 |
 | T1.3 | 安装两个上游构建依赖 | TODO | `yarn setup` 成功；两个 vendor 都有 `node_modules/vite` |
 | T1.4 | 契约测试转绿 | TODO | `yarn test` 不再跳过；IPC 快照、gachaType、idJson、补丁标记全部通过 |
-| T1.5 | 校验上游默认分支 | TODO | 两个上游远程 `main` 可正常拉取；若上游改名，更新脚本与 workflow |
+| T1.5 | 校验上游默认分支 | DONE | 两个上游 `main` 均已通过 `git ls-remote` 验证并使用 |
 
-执行顺序：T1.1 → T1.2 → T1.3 → T1.4。
+执行顺序：T1.2 → T1.3 → T1.4（T1.1、T1.5 已完成）。
 
 T1.1 命令：
 

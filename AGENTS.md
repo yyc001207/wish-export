@@ -28,11 +28,11 @@
 - 统一仓库骨架：`apps/desktop`、`scripts/`、`tests/contracts/`、`.github/workflows/`。
 - 统一启动器、游戏切换（`app.relaunch`）、按游戏隔离的数据目录方案。
 - 上游导入、补丁、同步、构建、契约测试脚本。
+- 两个上游已导入 `vendor/`：原神 `c4675ab`、星铁 `8a0b664`。
 
 未完成（不要假装已存在）：
 
-- `vendor/` 尚未导入两个上游。
-- vendor 的 4 类补丁（每个上游各 4 处）尚未实际写入（导入后运行 `yarn patch-vendor`）。
+- vendor 的 4 类补丁（每个上游 4 处）尚未写入，下一步运行 `yarn patch-vendor`。
 - 统一更新器未实现；当前通过补丁禁用上游自更新。
 - 旧版本数据自动迁移未实现。
 - 单窗口统一 UI 未实现，也不在当前范围。
