@@ -1,0 +1,64 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'build/**'
+      - 'apps/desktop/**'
+      - 'electron-builder.yml'
+      - 'package.json'
+      - 'vendor/**'
+      - '.github/workflows/build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install root dependencies
+        run: yarn install --network-timeout 600000
+
+      - name: Install vendor dependencies
+        run: yarn setup
+
+      - name: Verify vendor patches
+        run: yarn patch-vendor
+
+      - name: Tests
+        run: yarn test
+
+      - name: Build game bundles
+        run: yarn build:games
+
+      - name: Build Windows artifacts
+        run: yarn run electron-builder --win --publish never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wish-export-windows
+          path: |
+            release/*.exe
+            release/*.zip
+          if-no-files-found: error
+          retention-days: 14
