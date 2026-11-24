@@ -21,6 +21,8 @@
    ├─ LAUNCHER_STATUS
    ├─ LAUNCH_GAME
    ├─ OPEN_DATA_DIR
+   ├─ IMPORT_PICK_DIR
+   ├─ IMPORT_LEGACY_DATA
    ├─ QUIT_APP
    └─ spawn 游戏子进程（--wish-game=<id>, WISH_LAUNCHER_CHILD=1）
       └─ require dist/electron/games/<game>/main/main.js
@@ -127,6 +129,23 @@
 2. `tests/contracts/expected-channels.json`。
 3. 对应上游的 `renderer` 调用（如果上游新增）。
 
+### 4.1 统一层 IPC（启动器）
+
+启动器自己的通道与上游无关，由 `apps/desktop/src/main/bootstrap.js` 注册：
+
+| 通道 | 方向 | 说明 |
+| --- | --- | --- |
+| `LAUNCHER_STATUS` | 启动器渲染器 → 主进程 | 返回 `{version, dataDir, runningGame, games:[{id,name,subtitle,built}]}` |
+| `LAUNCH_GAME` | 启动器渲染器 → 主进程 | 启动指定游戏子进程；已运行、未构建或参数非法时返回 `{ok:false,message}` |
+| `OPEN_DATA_DIR` | 启动器渲染器 → 主进程 | 打开数据根目录 |
+| `IMPORT_PICK_DIR` | 启动器渲染器 → 主进程 | 弹出目录选择框，返回 `{canceled, dir, count}` |
+| `IMPORT_LEGACY_DATA` | 启动器渲染器 → 主进程 | 参数 `{dir, game}`，复制原版数据，返回 `{ok, copied, skipped, targetDir}` 或 `{ok:false, message}` |
+| `QUIT_APP` | 启动器渲染器 → 主进程 | 结束游戏子进程并退出程序 |
+
+主进程 → 启动器渲染器的事件：`LAUNCHER_STATUS_CHANGED`，运行状态变化后推送完整 status。
+
+启动器只通过 `apps/desktop/src/launcher/preload.js` 暴露的 `window.launcher` 调用这些通道；窗口开启 `contextIsolation` 与 `sandbox`，CSP 为 `default-src 'self'`。
+
 ## 5. 数据模型
 
 ### 5.1 本地文件
@@ -219,6 +238,17 @@ autoUpdate, fetchFullHistory, hideNovice
 - 不要随意修改应用名称，否则旧配置里的 URL 无法解密。
 - 统一版没有修改 `app.setName`，保持默认应用名。
 - 账号 URL 会过期，丢失可重新从日志/缓存获取。
+
+### 5.3 原版独立程序数据导入
+
+原版两个独立程序把数据写在各自安装目录的 `userData/` 下（没有游戏子目录），文件名同样是 `config.json` 与 `gacha-list-<uid>.json`。统一版在启动器提供手动导入（T3.2）：
+
+1. `IMPORT_PICK_DIR` 打开目录选择框，默认值由 `findLegacyDataDirHint()` 探测 `%LOCALAPPDATA%\Programs` 下与原版产品名相关的目录；
+2. `resolveLegacyDataDir()` 依次尝试所选目录本身与 `<所选目录>/userData/`，返回第一个含数据文件的目录；
+3. 用户选择游戏归属后，`IMPORT_LEGACY_DATA` 只复制顶层 `config.json` 与 `gacha-list-<uid>.json` 到 `app.getPath('userData')/userData/<game>/`，同名文件跳过，不覆盖、不移动、不删除原文件；
+4. 游戏运行中拒绝导入，避免与上游同时读写同一目录。
+
+实现：`apps/desktop/src/main/import-legacy-data.js`；单测：`tests/unit/import-legacy-data.test.js`。
 
 ## 6. 数据获取流程
 
