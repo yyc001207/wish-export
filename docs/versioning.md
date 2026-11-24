@@ -321,7 +321,8 @@ docs: 修复文档错字
 
 ## 14. AI 代理约束
 
-- 不得自行执行 `git tag`、`git push`、`git commit`，除非用户明确要求。
+- 改动完成后可以按 6.1 的粒度规则直接 `git commit`，无需询问。
+- 不得自行执行 `git tag`、`git push`、`git pull`、`git fetch`、`git rebase`、`git merge`、`git reset`、`git subtree add/pull` 等其他 git 操作，除非用户明确要求。
 - 不得自行提升版本号，除非任务明确标注为「发布」。
 - 提交必须遵循 6.1 的粒度规则，不同 `type` 拆开。
 - 发布前必须逐项执行第 7 节检查清单。

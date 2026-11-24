@@ -79,8 +79,8 @@ wish-export/
    主进程 CommonJS，渲染器 Vue 3 + Vite 2，Electron 16，`asar: false`。升级 Electron、Vite、element-plus 必须单独立项。
 6. **不手工修改 `vendor/`。**
    需要新补丁时，改 `scripts/apply-vendor-patches.js`，在文档里登记，再运行脚本。不要在编辑器里直接改完就算数。
-7. **git 操作需人工确认。**
-   不要主动执行 `git commit`、`git push`、`git subtree add/pull`、`git reset`。这些操作由用户明确要求后执行。
+7. **允许直接提交，禁止其他 git 操作。**
+   改动完成后可以按第 12 条的提交粒度规则直接 `git commit`，无需询问。但不得执行 `git push`、`git pull`、`git fetch`、`git rebase`、`git merge`、`git reset`、`git tag`、`git subtree add/pull` 等其他 git 操作，除非用户明确要求。
 8. **不做无关重构。**
    不引入 TypeScript、Pinia、新 UI 框架、新状态管理、新打包工具；不为了“代码好看”重写上游模块。
 9. **不记录敏感信息。**
