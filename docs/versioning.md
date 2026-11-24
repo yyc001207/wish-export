@@ -127,7 +127,7 @@ launcher, vendor, sync, build, docs, tests, deps, release
 示例：
 
 ```text
-feat(launcher): 显示两个游戏的最近更新时间
+feat(launcher): 显示两个分析工具的最近更新时间
 fix(vendor): 修复星铁数据目录迁移
 chore(sync): starrail upstream
 chore(release): v0.2.0
@@ -136,7 +136,7 @@ chore(release): v0.2.0
 破坏性变更必须在提交正文或 footer 写明：
 
 ```text
-BREAKING CHANGE: userData 目录改为按游戏分区，旧数据需要重新导入
+BREAKING CHANGE: userData 目录改为按分析工具分区，旧数据需要重新导入
 ```
 
 版本号提交必须独立：
@@ -177,9 +177,9 @@ docs: 修复文档错字
 - [ ] 上游已同步到预期快照；
 - [ ] `yarn patch-vendor` 成功；
 - [ ] `yarn test` 全部通过；
-- [ ] `yarn build:games` 两个游戏构建成功；
-- [ ] `yarn dev` 启动器正常，两个游戏都能进入；
-- [ ] 两个游戏的数据分别写入 `app.getPath('userData')/userData/<game>/`；
+- [ ] `yarn build:games` 两个分析工具构建成功；
+- [ ] `yarn dev` 启动器正常，两个分析工具都能进入；
+- [ ] 两个分析工具的数据分别写入 `app.getPath('userData')/userData/<game>/`；
 - [ ] Excel、UIGF 导出各验证一次；
 - [ ] 上游自更新仍处于禁用状态。
 

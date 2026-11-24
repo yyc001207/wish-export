@@ -49,7 +49,7 @@ git subtree add --prefix=vendor/starrail upstream-starrail main --squash
 yarn patch-vendor   # 应用 5 类最小补丁（每个上游 5 处）
 yarn setup          # 安装两个上游的构建依赖
 yarn test           # 契约测试
-yarn build:games    # 构建两个游戏
+yarn build:games    # 构建两个分析工具
 yarn dev            # 打开启动器
 ```
 
@@ -136,9 +136,9 @@ git subtree pull --prefix=vendor/starrail upstream-starrail main --squash -m "ch
 | id | 文件 | 标记 | 改动 |
 | --- | --- | --- | --- |
 | `utils-app-root` | `src/main/utils.js` | `WISH_APP_ROOT` | `appRoot` 优先读数据根目录 |
-| `utils-user-data` | `src/main/utils.js` | `process.env.WISH_GAME` | `userDataPath` 追加游戏子目录 |
+| `utils-user-data` | `src/main/utils.js` | `process.env.WISH_GAME` | `userDataPath` 追加按分析工具划分的子目录 |
 | `main-renderer` | `src/main/main.js` | `WISH_RENDERER` | 渲染器入口由统一入口注入 |
-| `main-single-instance` | `src/main/main.js` | `WISH_LAUNCHER_CHILD` | 游戏子进程跳过单实例锁 |
+| `main-single-instance` | `src/main/main.js` | `WISH_LAUNCHER_CHILD` | 分析工具子进程跳过单实例锁 |
 | `update-disabled` | `src/main/update/index.js` | `WISH_UPDATE_DISABLED` | 统一版禁用上游自更新 |
 
 补丁后的代码：
@@ -239,9 +239,9 @@ const update = async () => {
 - [ ] `git diff` 确认 `vendor/` 只包含上游改动与 5 类补丁（每个上游 5 处）。
 - [ ] `yarn patch-vendor` 成功。
 - [ ] `yarn test` 全部通过。
-- [ ] `yarn build:games` 两个游戏构建成功。
-- [ ] `yarn dev` 启动器显示两个游戏“已就绪”。
-- [ ] 分别进入两个游戏，加载数据、导出 Excel、导出 UIGF 各验证一次。
+- [ ] `yarn build:games` 两个分析工具构建成功。
+- [ ] `yarn dev` 启动器显示两个分析工具“已就绪”。
+- [ ] 分别进入两个分析工具，加载数据、导出 Excel、导出 UIGF 各验证一次。
 - [ ] 数据仍然写入 `app.getPath('userData')/userData/<game>/`。
 - [ ] 更新 `docs/tasks.md` 或 PR 描述。
 

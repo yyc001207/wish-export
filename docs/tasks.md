@@ -16,7 +16,7 @@
 
 **T3.2 真机验证**（代码与单测已完成）。
 
-M2 构建与启动器联调已于 2026-11-24 在真实桌面验证通过：启动器可打开并显示两个游戏“已就绪”，两个游戏分别可进入，导出正常；数据分别写入 `app.getPath('userData')/userData/genshin/` 与 `.../starrail/`，未出现 IPC 重复注册错误。
+M2 构建与启动器联调已于 2026-11-24 在真实桌面验证通过：启动器可打开并显示两个分析工具“已就绪”，两个分析工具分别可进入，导出正常；数据分别写入 `app.getPath('userData')/userData/genshin/` 与 `.../starrail/`，未出现 IPC 重复注册错误。
 
 当前发布版为 v0.1.1（`Wish-Export-0.1.1-x64.exe` / `.zip`，GitHub Actions 构建）。T3.2 已实现：启动器“导入原版数据”→ 选择目录（默认探测 `%LOCALAPPDATA%\Programs` 下的原版安装目录）→ 选择游戏归属 → 只复制 `config.json` 与 `gacha-list-*.json` 到 `userData/<game>/`，不覆盖已有文件。沙箱无法启动 Electron 窗口，需在真实桌面按 T3.2 实现提示点一次；验证通过后把 T3.2 改为 DONE，下一步为 T3.5 用户文档、T3.6 许可证与署名。
 
@@ -70,19 +70,19 @@ yarn test
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T2.1 | 构建两个游戏 | DONE | `yarn build:games` 成功；main 与 renderer 产物齐全 |
-| T2.2 | 启动器联调 | DONE | 2026-11-24 真实桌面验证：启动器显示两个游戏“已就绪”，点击后隐藏到托盘、入口变灰，关闭游戏后自动回到启动器 |
+| T2.1 | 构建两个分析工具 | DONE | `yarn build:games` 成功；main 与 renderer 产物齐全 |
+| T2.2 | 启动器联调 | DONE | 2026-11-24 真实桌面验证：启动器显示两个分析工具“已就绪”，点击后隐藏到托盘、入口变灰，关闭分析工具后自动回到启动器 |
 | T2.3 | 原神入口验证 | DONE | 真实桌面验证：入口加载正常，导出正常 |
 | T2.4 | 星铁入口验证 | DONE | 真实桌面验证：入口加载正常，导出正常 |
 | T2.5 | 数据隔离验证 | DONE | 真实运行确认数据分别写入 `%APPDATA%\hoyo-gacha-export\userData\genshin\`、`...\starrail\` |
-| T2.6 | 切换与单实例验证 | DONE | 真机验证：运行中入口禁用，关闭后可切到另一游戏；未出现 IPC 重复注册错误 |
+| T2.6 | 切换与单实例验证 | DONE | 真机验证：运行中入口禁用，关闭后可切到另一分析工具；未出现 IPC 重复注册错误 |
 | T2.7 | 记录体积与耗时 | DONE | v0.1.1（Actions）exe 59.8 MB（62,693,202 B）、zip 80.5 MB（84,444,599 B）；本地构建 248.5s、打包 33.2s（v0.1.0 记录） |
-| T2.8 | 托盘常驻与游戏子进程 | DONE | 真机验证：启动器常驻托盘、游戏子进程独立、入口禁用/恢复均正常 |
+| T2.8 | 托盘常驻与分析工具子进程 | DONE | 真机验证：启动器常驻托盘、分析工具子进程独立、入口禁用/恢复均正常 |
 
 验收时重点观察：
 
 - 控制台是否出现 IPC 重复注册错误；
-- 两个游戏是否都写入正确的数据目录；
+- 两个分析工具是否都写入正确的数据目录；
 - 原神/星铁界面是否因为路径变化出现空白、资源 404；
 - DevTools 是否有 CSP 或 preload 报错。
 
@@ -100,7 +100,7 @@ yarn test
 | T3.1 | 统一版旧安装目录数据迁移 | DONE | 启动时复制 `<旧安装目录>/userData/<game>` 到 `app.getPath('userData')/userData/<game>`；只补齐缺失文件、不覆盖、不删除；有单测 |
 | T3.2 | 原版独立程序数据导入 UI | DOING | 启动器提供“导入原版数据”入口，默认定位原版安装目录，选目录后选择游戏归属，只复制 `config.json` 与 `gacha-list-*.json`、不覆盖；单测 6 项通过；**待真实桌面点击验证** |
 | T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.1.1-x64.exe`（59.8 MB）与 `.zip`（80.5 MB）；v0.1.0、v0.1.1 已发布 |
-| T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个游戏的 main/renderer 均存在 |
+| T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个分析工具的 main/renderer 均存在 |
 | T3.5 | 用户文档 | TODO | 根 README 说明安装、使用、数据位置、从旧版迁移 |
 | T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
 | T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0、v0.1.1 实际运行成功，exe/zip/SHA256 已上传 |
@@ -118,7 +118,7 @@ yarn test
 实现（2026-11-24）：
 
 - 主进程 `apps/desktop/src/main/import-legacy-data.js`：识别 `config.json` 与 `gacha-list-<uid>.json`，解析安装目录 / `userData` / 数据目录三种选择，只复制不覆盖，探测 `%LOCALAPPDATA%\Programs` 下的原版安装目录作默认值；
-- `bootstrap.js` 新增 IPC `IMPORT_PICK_DIR`、`IMPORT_LEGACY_DATA`：选择目录、校验游戏归属、游戏运行中拒绝导入、目标为 `app.getPath('userData')/userData/<game>/`；
+- `bootstrap.js` 新增 IPC `IMPORT_PICK_DIR`、`IMPORT_LEGACY_DATA`：选择目录、校验游戏归属、分析工具运行中拒绝导入、目标为 `app.getPath('userData')/userData/<game>/`；
 - 启动器 `apps/desktop/src/launcher/`：footer 增加“导入原版数据”按钮、选择游戏归属的模态框、运行中禁用、Esc 取消、结果提示；
 - 单测 `tests/unit/import-legacy-data.test.js` 覆盖：文件识别、三种目录解析、忽略日志/窗口状态、不覆盖、自动建目录、异常参数。
 
@@ -129,7 +129,7 @@ yarn test
 3. 选中后出现“这份数据属于哪个游戏？”模态框，分别对原神、星铁各导入一次；
 4. 确认提示“已导入 N 个文件”，`%APPDATA%\hoyo-gacha-export\userData\<game>\` 出现 `gacha-list-*.json` / `config.json`；
 5. 重复导入同一目录，确认提示“已存在未覆盖”，文件未被改动；
-6. 运行游戏时点击导入，确认按钮禁用（主进程也会拒绝）。
+6. 运行分析工具时点击导入，确认按钮禁用（主进程也会拒绝）。
 
 验证通过后把 T3.2 改为 DONE。
 
@@ -166,11 +166,11 @@ yarn test
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T5.1 | 统一设置页 | TODO | 两个游戏共用语言、更新、数据目录设置，不影响游戏业务 |
+| T5.1 | 统一设置页 | TODO | 两个分析工具共用语言、更新、数据目录设置，不影响分析工具业务 |
 | T5.2 | 启动器显示最近更新时间 | TODO | 读取 `app.getPath('userData')/userData/<game>/` 最新 `time` |
-| T5.3 | 托盘快速切换 | TODO | 不破坏单进程单游戏约束 |
+| T5.3 | 托盘快速切换 | TODO | 不破坏单进程单工具约束 |
 
-当前不做：游戏主界面统一、共享 core、单窗口双游戏。
+当前不做：分析工具主界面统一、共享 core、单窗口双分析工具。
 
 ## 任务模板
 

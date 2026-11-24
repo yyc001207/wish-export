@@ -6,7 +6,7 @@
 
 统一工具由三部分组成：
 
-1. **统一入口**：`apps/desktop`，负责启动器、单实例、游戏选择、环境变量注入。
+1. **统一入口**：`apps/desktop`，负责启动器、单实例、分析工具选择、环境变量注入。
 2. **两个只读上游**：`vendor/genshin`、`vendor/starrail`，各自包含完整的 Electron 主进程与 Vue 渲染器。
 3. **同步与验证设施**：`scripts/`、`tests/contracts/`、`.github/workflows/`。
 
@@ -24,21 +24,21 @@
    ├─ IMPORT_PICK_DIR
    ├─ IMPORT_LEGACY_DATA
    ├─ QUIT_APP
-   └─ spawn 游戏子进程（--wish-game=<id>, WISH_LAUNCHER_CHILD=1）
+   └─ spawn 分析工具子进程（--wish-game=<id>, WISH_LAUNCHER_CHILD=1）
       └─ require dist/electron/games/<game>/main/main.js
          ├─ 创建窗口
          ├─ 加载 dist/electron/games/<game>/renderer/index.html
-         ├─ 注册该游戏的 IPC
+         ├─ 注册该分析工具的 IPC
          └─ 读写 app.getPath('userData')/userData/<game>/
 ```
 
 关键点：
 
-- 启动器进程常驻托盘，游戏作为独立子进程运行。
-- 一个游戏子进程只加载一个游戏模块。
-- 关闭游戏窗口后子进程退出，启动器重新显示并恢复入口。
+- 启动器进程常驻托盘，分析工具作为独立子进程运行。
+- 一个分析工具子进程只加载一个分析工具模块。
+- 关闭分析工具窗口后子进程退出，启动器重新显示并恢复入口。
 - 关闭启动器窗口只隐藏到托盘；托盘菜单“退出”才结束程序。
-- 游戏窗口的渲染器仍然使用上游原版 Vue 应用。
+- 分析工具窗口的渲染器仍然使用上游原版 Vue 应用。
 
 ## 3. 上游文件职责
 
@@ -91,7 +91,7 @@
 
 ## 4. IPC 通道契约
 
-两个上游的通道重叠严重，这是必须一次只运行一个游戏的直接原因。
+两个上游的通道重叠严重，这是必须一次只运行一个分析工具的直接原因。
 
 | 通道 | 原神 | 星铁 | 注册文件（原神 / 星铁） | 说明 |
 | --- | --- | --- | --- | --- |
@@ -136,11 +136,11 @@
 | 通道 | 方向 | 说明 |
 | --- | --- | --- |
 | `LAUNCHER_STATUS` | 启动器渲染器 → 主进程 | 返回 `{version, dataDir, runningGame, games:[{id,name,subtitle,built}]}` |
-| `LAUNCH_GAME` | 启动器渲染器 → 主进程 | 启动指定游戏子进程；已运行、未构建或参数非法时返回 `{ok:false,message}` |
+| `LAUNCH_GAME` | 启动器渲染器 → 主进程 | 启动指定分析工具子进程；已运行、未构建或参数非法时返回 `{ok:false,message}` |
 | `OPEN_DATA_DIR` | 启动器渲染器 → 主进程 | 打开数据根目录 |
 | `IMPORT_PICK_DIR` | 启动器渲染器 → 主进程 | 弹出目录选择框，返回 `{canceled, dir, count}` |
 | `IMPORT_LEGACY_DATA` | 启动器渲染器 → 主进程 | 参数 `{dir, game}`，复制原版数据，返回 `{ok, copied, skipped, targetDir}` 或 `{ok:false, message}` |
-| `QUIT_APP` | 启动器渲染器 → 主进程 | 结束游戏子进程并退出程序 |
+| `QUIT_APP` | 启动器渲染器 → 主进程 | 结束分析工具子进程并退出程序 |
 
 主进程 → 启动器渲染器的事件：`LAUNCHER_STATUS_CHANGED`，运行状态变化后推送完整 status。
 
@@ -214,7 +214,7 @@
 }
 ```
 
-**两个游戏的记录结构不同，不要合并数据结构。** 原神是数组元组，星铁是对象；星铁还多 `region`、`region_time_zone`、`gacha_id`、`count`。
+**两个分析工具的记录结构不同，不要合并数据结构。** 原神是数组元组，星铁是对象；星铁还多 `region`、`region_time_zone`、`gacha_id`、`count`。
 
 ### 5.2 配置
 
@@ -241,12 +241,12 @@ autoUpdate, fetchFullHistory, hideNovice
 
 ### 5.3 原版独立程序数据导入
 
-原版两个独立程序把数据写在各自安装目录的 `userData/` 下（没有游戏子目录），文件名同样是 `config.json` 与 `gacha-list-<uid>.json`。统一版在启动器提供手动导入（T3.2）：
+原版两个独立程序把数据写在各自安装目录的 `userData/` 下（没有按分析工具划分的子目录），文件名同样是 `config.json` 与 `gacha-list-<uid>.json`。统一版在启动器提供手动导入（T3.2）：
 
 1. `IMPORT_PICK_DIR` 打开目录选择框，默认值由 `findLegacyDataDirHint()` 探测 `%LOCALAPPDATA%\Programs` 下与原版产品名相关的目录；
 2. `resolveLegacyDataDir()` 依次尝试所选目录本身与 `<所选目录>/userData/`，返回第一个含数据文件的目录；
 3. 用户选择游戏归属后，`IMPORT_LEGACY_DATA` 只复制顶层 `config.json` 与 `gacha-list-<uid>.json` 到 `app.getPath('userData')/userData/<game>/`，同名文件跳过，不覆盖、不移动、不删除原文件；
-4. 游戏运行中拒绝导入，避免与上游同时读写同一目录。
+4. 分析工具运行中拒绝导入，避免与上游同时读写同一目录。
 
 实现：`apps/desktop/src/main/import-legacy-data.js`；单测：`tests/unit/import-legacy-data.test.js`。
 
@@ -357,12 +357,12 @@ autoUpdate, fetchFullHistory, hideNovice
 
 | 变量 | 设置方 | 用途 |
 | --- | --- | --- |
-| `WISH_GAME` | `bootstrap.js` | 当前游戏 id，决定数据子目录 |
+| `WISH_GAME` | `bootstrap.js` | 当前分析工具 id，决定数据子目录 |
 | `WISH_APP_ROOT` | `bootstrap.js` | 数据根目录（开发态是仓库根目录，打包后是 `app.getPath('userData')`），vendor 用它定位 `userData/` |
-| `WISH_RENDERER` | `bootstrap.js` | 当前游戏渲染器 `index.html` 的绝对路径 |
+| `WISH_RENDERER` | `bootstrap.js` | 当前分析工具渲染器 `index.html` 的绝对路径 |
 | `WISH_UPDATE_DISABLED` | `bootstrap.js` | 固定为 `1`，禁用上游自更新 |
 | `WISH_LAUNCHER_CHILD` | 启动器 spawn 子进程时 | 固定为 `1`，让 game 主进程跳过单实例锁 |
-| `WISH_DEV_SERVER_URL` | 可选 | 单游戏热更新时加载 Vite dev server |
+| `WISH_DEV_SERVER_URL` | 可选 | 单个分析工具热更新时加载 Vite dev server |
 
 除此之外，统一层不调用 vendor 的内部函数。
 
@@ -388,9 +388,10 @@ dist/electron/
 
 | 术语 | 含义 |
 | --- | --- |
+| 分析工具 | `vendor/` 里原神或星铁各自的可运行程序（主进程 + 渲染器）。文档中“运行 / 启动 / 关闭 / 窗口 / 子进程 / 构建”的对象一律称分析工具，不称游戏；只有游戏日志、游戏版本、游戏接口、数据归属等指游戏本身的表述保留“游戏” |
 | vendor | 从上游导入的只读代码副本 |
-| 统一入口 | `apps/desktop`，负责启动器与游戏启动 |
-| 启动器 | 选择游戏的窗口，不加载任何抽卡业务模块 |
+| 统一入口 | `apps/desktop`，负责启动器与分析工具启动 |
+| 启动器 | 选择分析工具的窗口，不加载任何抽卡业务模块 |
 | 契约测试 | 校验上游 IPC、数据格式、补丁标记的测试 |
 | 补丁 | `apply-vendor-patches.js` 产生的、带标记的最小改动 |
 | 数据根目录 | 打包后为 `app.getPath('userData')`，不是安装目录；更新/重装不会覆盖 |

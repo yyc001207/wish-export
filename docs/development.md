@@ -34,7 +34,7 @@ yarn setup
 # 5. 运行契约测试
 yarn test
 
-# 6. 构建两个游戏
+# 6. 构建两个分析工具
 yarn build:games
 
 # 7. 打开统一启动器
@@ -50,8 +50,8 @@ yarn dev
 | `patch-vendor` | 5 类带标记的补丁（每个上游 5 处） | 按 [upstream-sync.md](upstream-sync.md) 5.3 处理 |
 | `setup` | 两个 vendor 的 `node_modules` | 检查 Yarn 与网络；可单独在 vendor 目录执行 |
 | `test` | 契约测试结果 | 见 [upstream-sync.md](upstream-sync.md) 5.4 |
-| `build:games` | `dist/electron/games/` | 查看具体游戏的构建日志 |
-| `dev` | 启动器窗口 | 确认两个游戏显示“已就绪” |
+| `build:games` | `dist/electron/games/` | 查看具体分析工具的构建日志 |
+| `dev` | 启动器窗口 | 确认两个分析工具显示“已就绪” |
 
 ### 2.1 导入脚本做了什么
 
@@ -101,7 +101,7 @@ yarn dev
 流程：
 
 1. `bootstrap.js` 打开启动器；
-2. 点击游戏后进程重启，加载 `dist/electron/games/<game>/main/main.js`；
+2. 点击分析工具后进程重启，加载 `dist/electron/games/<game>/main/main.js`；
 3. 渲染器加载 `dist/electron/games/<game>/renderer/index.html`。
 
 这是**构建产物模式**，不提供渲染器热更新。每次改 vendor 代码后需要重新 `yarn build:games`。
@@ -109,9 +109,9 @@ yarn dev
 适合：
 
 - 验证启动器、进程切换、数据目录隔离、打包路径；
-- 验证两个游戏能否正常加载。
+- 验证两个分析工具能否正常加载。
 
-### 3.2 单游戏热更新
+### 3.2 单个分析工具热更新
 
 ```powershell
 yarn --cwd vendor/genshin dev
@@ -128,16 +128,16 @@ yarn --cwd vendor/starrail dev
 
 - 需要该目录执行过完整 `yarn install`；
 - 数据目录为 `vendor/<game>/userData/default/`（因为 `WISH_GAME` 未设置）；
-- 这个模式不经过统一启动器，只用于单游戏 UI/逻辑开发。
+- 这个模式不经过统一启动器，只用于单个分析工具 UI/逻辑开发。
 
-### 3.3 直接启动某个游戏
+### 3.3 直接启动某个分析工具
 
 ```powershell
 yarn start:genshin
 yarn start:starrail
 ```
 
-跳过启动器，直接以对应 `WISH_GAME` 启动。适合调试游戏模块本身。
+跳过启动器，直接以对应 `WISH_GAME` 启动。适合调试分析工具模块本身。
 
 ### 3.4 可选：让统一入口加载 Vite dev server
 
@@ -160,7 +160,7 @@ yarn build:games
 实际执行：
 
 1. 删除 `dist/electron/games/`；
-2. 对每个游戏：
+2. 对每个分析工具：
    - 删除 `vendor/<game>/dist/electron`；
    - 在该目录执行 `node .electron-vite/build.js`；
    - 校验 `dist/electron/main/main.js` 与 `dist/electron/renderer/index.html`；
@@ -201,7 +201,7 @@ dist/electron/games/starrail/renderer/index.html
 | --- | --- |
 | 统一入口开发 | `<仓库根>/userData/genshin/`、`<仓库根>/userData/starrail/` |
 | 统一入口打包后 | `app.getPath('userData')/userData/genshin/`、`.../starrail/`；Windows 通常为 `%APPDATA%\hoyo-gacha-export\userData\...` |
-| vendor 单游戏热更新 | `vendor/<game>/userData/default/` |
+| vendor 单个分析工具热更新 | `vendor/<game>/userData/default/` |
 | 旧版统一工具 | `<旧安装目录>/userData/`，首次启动自动复制到 AppData |
 | 原版独立程序 | `<旧安装目录>/userData/`，需要手动导入 |
 
@@ -218,15 +218,15 @@ Get-ChildItem .\userData -Recurse
 常见问题：
 
 - 程序异常退出后代理没关闭：重新打开工具，进入设置关闭代理，或在 Windows 设置里手动关闭系统代理。
-- 端口被占用：确认没有另一个游戏/旧版程序在运行。
+- 端口被占用：确认没有另一个分析工具/旧版程序在运行。
 - 抓不到 URL：确认游戏已打开抽卡记录页面，且代理模式开启。
 
 ### 5.5 常见错误
 
 | 错误 | 原因 | 处理 |
 | --- | --- | --- |
-| `缺少游戏构建` | `dist/electron/games/<game>/` 不存在 | `yarn build:games` |
-| `Attempted to register a second handler` | 同时加载了两个游戏 | 检查是否直接 require 了两个 vendor main |
+| `缺少分析工具构建` | `dist/electron/games/<game>/` 不存在 | `yarn build:games` |
+| `Attempted to register a second handler` | 同时加载了两个分析工具 | 检查是否直接 require 了两个 vendor main |
 | `vendor/genshin 未导入` | 没执行导入 | `yarn import-upstream` |
 | `vendor/genshin 依赖未安装` | 没执行 setup | `yarn setup` |
 | Electron 下载失败 | 网络问题 | 设置 `ELECTRON_MIRROR` 后重试 `yarn install` |
@@ -274,7 +274,7 @@ release/
 - 安装 exe 或解压 zip 后，桌面快捷方式和程序窗口使用统一图标；
 - 托盘图标与程序图标一致，只是尺寸更小；
 - 双击程序能打开启动器；
-- 进入游戏后数据写入 `app.getPath('userData')/userData/<game>/`，不是安装目录；
+- 进入分析工具后数据写入 `app.getPath('userData')/userData/<game>/`，不是安装目录；
 - 不要把程序安装到只读目录，安装/卸载前备份数据目录。
 
 当前只在 Windows 上验证。macOS/Linux 配置保留但未验证，不要声称已支持。
@@ -356,7 +356,7 @@ yarn dev
 6. 视情况增加 vendor 补丁；
 7. 更新所有文档。
 
-不要改动已有游戏的行为。
+不要改动已有分析工具的行为。
 
 ## 10. 文档维护
 

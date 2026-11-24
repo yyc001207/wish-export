@@ -30,27 +30,27 @@
 ### 2.1 目标
 
 1. 用户只安装一个程序，只从一个入口启动。
-2. 两个游戏的数据、配置、缓存互不覆盖。
+2. 两个分析工具的数据、配置、缓存互不覆盖。
 3. 上游更新后，可以用一条命令或一个自动 PR 完成同步。
 4. 同步后能自动发现“上游接口变了，但统一入口没跟上”的问题。
-5. 两个游戏的原有界面与导出能力保持不变，降低回归风险。
+5. 两个分析工具的原有界面与导出能力保持不变，降低回归风险。
 
 ### 2.2 非目标（当前阶段明确不做）
 
-1. 不做单窗口、同一套 UI 的双游戏切换。
+1. 不做单窗口、同一套 UI 的双分析工具切换。
 2. 不抽取共享 core，不重写数据获取、合并、导出逻辑。
 3. 不统一 element-plus 版本，不迁移 Vue 版本。
 4. 不实现统一更新器（先禁用上游自更新）。
 5. 原版独立程序的数据导入只做启动器内的手动入口（T3.2）：选择目录、选择游戏归属、只复制不覆盖；不做自动扫描磁盘或识别任意备份目录。
 6. 不合并原神的 web 构建（`build:web`）与 Gist 功能。
-7. 不把两个游戏做成两个安装包。
+7. 不把两个分析工具做成两个安装包。
 
 ## 3. 约束与事实
 
 | 约束 | 影响 |
 | --- | --- |
 | 两个上游没有共享 core | 不能通过 merge 两个仓库得到一份干净代码 |
-| 两边 IPC 通道大量重名 | 同一主进程不能同时加载两个游戏 |
+| 两边 IPC 通道大量重名 | 同一主进程不能同时加载两个分析工具 |
 | 两边数据文件名相同 | 不隔离目录会互相覆盖 |
 | element-plus 版本不同 | 不能简单合并成一份依赖 |
 | 原神 UIGF 3.0/4.1，星铁 SRGF/UIGF 4.x | 导出序列化不能共用 |
@@ -82,7 +82,7 @@
 │ apps/desktop/src/main/bootstrap.js                          │
 │                                                            │
 │  ├─ 启动器窗口 + Tray                                       │
-│  └─ spawn 游戏子进程（--wish-game=<id>）                    │
+│  └─ spawn 分析工具子进程（--wish-game=<id>）                    │
 └───────────────────────────┬────────────────────────────────┘
                             │ 同一时间只启动一个
               ┌─────────────┴─────────────┐
@@ -101,7 +101,7 @@
 
 | 目录 | 职责 | 是否手改 |
 | --- | --- | --- |
-| `apps/desktop/src/main/bootstrap.js` | 统一入口：启动器、游戏启动、环境变量注入 | 是 |
+| `apps/desktop/src/main/bootstrap.js` | 统一入口：启动器、分析工具启动、环境变量注入 | 是 |
 | `apps/desktop/src/launcher/` | 启动器页面与 preload | 是 |
 | `scripts/` | 导入、同步、补丁、依赖安装、构建 | 是 |
 | `tests/contracts/` | 上游接口与数据契约测试 | 是 |
@@ -117,39 +117,39 @@
 1. 用户启动程序，Electron 加载 `package.json` 的 `main`：`apps/desktop/src/main/bootstrap.js`。
 2. `bootstrap.js` 读取 `process.env.WISH_GAME` 与 `--wish-game` 参数。
 3. 未设置或值非法：进入启动器进程，创建启动器窗口与托盘。
-4. 启动器读取 `LAUNCHER_STATUS`，显示两个游戏是否已构建、是否有游戏正在运行。
-5. 用户点击某个游戏：
-   - 校验构建产物存在，且当前没有游戏在运行；
+4. 启动器读取 `LAUNCHER_STATUS`，显示两个分析工具是否已构建、是否有分析工具正在运行。
+5. 用户点击某个分析工具：
+   - 校验构建产物存在，且当前没有分析工具在运行；
    - `spawn(process.execPath, ['--wish-game=<id>'], { env: { WISH_LAUNCHER_CHILD: '1' } })`；
    - 启动器窗口隐藏到托盘，两个入口变灰不可点击。
-6. 游戏子进程启动，`bootstrap.js` 注入：
+6. 分析工具子进程启动，`bootstrap.js` 注入：
    - `WISH_APP_ROOT`：数据根目录（打包后是 `app.getPath('userData')`）；
-   - `WISH_RENDERER`：当前游戏的 `renderer/index.html` 绝对路径；
+   - `WISH_RENDERER`：当前分析工具的 `renderer/index.html` 绝对路径；
    - `WISH_UPDATE_DISABLED=1`：禁用上游自更新；
-   - 然后 `require` 对应游戏的 `main/main.js`。
-7. 游戏的 `main.js` 创建自己的窗口、注册自己的 IPC、加载自己的渲染器。
-8. 关闭游戏窗口时，游戏子进程退出；启动器收到 `exit` 事件后重新显示窗口，入口恢复可点击。
-9. 关闭启动器窗口时收起到托盘；托盘菜单“退出”会结束游戏子进程并退出整个程序。
+   - 然后 `require` 对应分析工具的 `main/main.js`。
+7. 分析工具的 `main.js` 创建自己的窗口、注册自己的 IPC、加载自己的渲染器。
+8. 关闭分析工具窗口时，分析工具子进程退出；启动器收到 `exit` 事件后重新显示窗口，入口恢复可点击。
+9. 关闭启动器窗口时收起到托盘；托盘菜单“退出”会结束分析工具子进程并退出整个程序。
 
-### 6.2 为什么用独立子进程，而不是同进程加载两个游戏
+### 6.2 为什么用独立子进程，而不是同进程加载两个分析工具
 
 两个上游都在模块加载阶段注册 IPC：
 
-| 游戏 | 注册位置 | 典型通道 |
+| 分析工具 | 注册位置 | 典型通道 |
 | --- | --- | --- |
 | 原神 | `getData.js`、`excel.js`、`UIGFJson.js`、`gists.js` | `FETCH_DATA`、`SAVE_EXCEL`、`EXPORT_UIGF_JSON` |
 | 星铁 | `getData.js`、`excel.js`、`UIGFJson.js`、`bridge.js` | `FETCH_DATA`、`SAVE_EXCEL`、`EXPORT_UIGF_JSON` |
 
-`ipcMain.handle` 对同一通道只能注册一次，第二次注册会抛错。即使手动 `removeHandler`，两个游戏的模块状态、定时器、代理状态也很难彻底清理。
+`ipcMain.handle` 对同一通道只能注册一次，第二次注册会抛错。即使手动 `removeHandler`，两个分析工具的模块状态、定时器、代理状态也很难彻底清理。
 
-因此采用：**启动器进程常驻托盘，游戏作为独立子进程运行**。这样既避免 IPC 冲突，又不需要关闭启动器，还能在游戏退出后自动恢复入口。
+因此采用：**启动器进程常驻托盘，分析工具作为独立子进程运行**。这样既避免 IPC 冲突，又不需要关闭启动器，还能在分析工具退出后自动恢复入口。
 
 ### 6.3 单实例
 
 - 启动器进程获取单实例锁；已有实例时聚焦启动器。
-- 游戏子进程带 `WISH_LAUNCHER_CHILD=1`，通过 vendor 补丁跳过单实例锁，避免被启动器持有的锁判定为第二实例。
-- 启动器只记录一个 `gameProcess`，游戏运行期间入口不可点击，保证同一时间只运行一个游戏。
-- 游戏运行期间再次双击程序，会聚焦启动器窗口。
+- 分析工具子进程带 `WISH_LAUNCHER_CHILD=1`，通过 vendor 补丁跳过单实例锁，避免被启动器持有的锁判定为第二实例。
+- 启动器只记录一个 `gameProcess`，分析工具运行期间入口不可点击，保证同一时间只运行一个分析工具。
+- 分析工具运行期间再次双击程序，会聚焦启动器窗口。
 
 ## 7. 数据目录设计
 
@@ -199,7 +199,7 @@ const appRoot = process.env.WISH_APP_ROOT || (isDev ? path.resolve(__dirname, '.
 const userDataPath = path.resolve(appRoot, 'userData', process.env.WISH_GAME || 'default')
 ```
 
-`bootstrap.js` 在 require 游戏主进程之前设置 `WISH_APP_ROOT` 与 `WISH_GAME`。
+`bootstrap.js` 在 require 分析工具主进程之前设置 `WISH_APP_ROOT` 与 `WISH_GAME`。
 打包后 `WISH_APP_ROOT` 为 `app.getPath('userData')`。
 
 ### 7.4 旧数据迁移
@@ -214,13 +214,13 @@ const userDataPath = path.resolve(appRoot, 'userData', process.env.WISH_GAME || 
 4. 保留旧文件，不删除。
 5. 迁移失败只记录日志，不阻塞程序启动。
 
-原版独立程序的 `userData/` 没有游戏子目录，无法可靠判断归属，仍需要用户手动导入；
+原版独立程序的 `userData/` 没有按分析工具划分的子目录，无法可靠判断归属，仍需要用户手动导入；
 这部分导入 UI 属于后续任务。
 
 ### 7.5 其他共享状态
 
-- `electron-window-state` 使用 `app.getPath('userData')`（系统 AppData）保存窗口状态，两个游戏会共享。影响很小，暂不处理。
-- 代理端口固定 `8325`，因为同一时间只运行一个游戏，不会冲突。
+- `electron-window-state` 使用 `app.getPath('userData')`（系统 AppData）保存窗口状态，两个分析工具会共享。影响很小，暂不处理。
+- 代理端口固定 `8325`，因为同一时间只运行一个分析工具，不会冲突。
 
 ## 8. vendor 补丁边界
 
@@ -231,7 +231,7 @@ const userDataPath = path.resolve(appRoot, 'userData', process.env.WISH_GAME || 
 | `src/main/utils.js` | `WISH_APP_ROOT` | 让统一入口注入数据根目录 |
 | `src/main/utils.js` | `process.env.WISH_GAME` | 每个游戏独立数据目录 |
 | `src/main/main.js` | `WISH_RENDERER` | 加载统一入口指定的渲染器入口 |
-| `src/main/main.js` | `WISH_LAUNCHER_CHILD` | 游戏子进程跳过单实例锁 |
+| `src/main/main.js` | `WISH_LAUNCHER_CHILD` | 分析工具子进程跳过单实例锁 |
 | `src/main/update/index.js` | `WISH_UPDATE_DISABLED` | 禁用上游自更新 |
 
 补丁后的 `main.js` 渲染器加载逻辑：
@@ -261,7 +261,7 @@ const update = async () => {
 }
 ```
 
-为什么必须禁用上游更新：上游更新器会下载原版 `app.zip`，清空并覆盖整个应用目录。统一版如果继续运行它，会把启动器和另一个游戏一起删掉。
+为什么必须禁用上游更新：上游更新器会下载原版 `app.zip`，清空并覆盖整个应用目录。统一版如果继续运行它，会把启动器和另一个分析工具一起删掉。
 
 ## 9. 构建与打包
 
@@ -279,7 +279,7 @@ yarn build:games
   └─ copy → dist/electron/games/starrail/{main,renderer}
 ```
 
-每个游戏使用自己的 `node_modules` 构建：
+每个分析工具使用自己的 `node_modules` 构建：
 
 - 原神使用 `element-plus@1.3.0-beta.7`；
 - 星铁使用 `element-plus@2.3.7`；
@@ -311,7 +311,7 @@ release/
 
 - `asar: false`：上游更新器与文件替换逻辑依赖真实文件路径，保持不打包成 asar。
 - `main`：`apps/desktop/src/main/bootstrap.js`。
-- 打包只包含统一入口、启动器、两个游戏产物，不包含 `vendor/` 源码与 `node_modules`。
+- 打包只包含统一入口、启动器、两个分析工具产物，不包含 `vendor/` 源码与 `node_modules`。
 - `electron-builder.yml` 中 `productName`、`appId` 使用新值，旧版不会自动升级到统一版。
 - Windows 产物为 NSIS exe 安装包与 zip 便携包；安装包默认安装到当前用户目录。
 - 安装包未签名，Windows SmartScreen 可能提示未知发布者；数据目录建议定期备份。
@@ -352,11 +352,11 @@ yarn sync-upstream
 
 契约测试覆盖：
 
-1. 两个游戏的 IPC 通道快照（16 / 15 个）。
+1. 两个分析工具的 IPC 通道快照（16 / 15 个）。
 2. `gachaType.json` 的卡池类型键集合。
 3. 星铁 `idJson.json` 的语言数量、条目数量、字段结构。
 4. 5 类 vendor 补丁标记是否仍然存在。
-5. 两个游戏是否能完成构建（M2 加入 CI）。
+5. 两个分析工具是否能完成构建（M2 加入 CI）。
 
 ## 11. 更新策略
 
@@ -369,7 +369,7 @@ yarn sync-upstream
 后续（M4）：
 
 - 实现统一更新器，替换两个 `update/index.js` 的生效路径。
-- 更新包结构为整个统一应用目录，而不是单个游戏的 `app.zip`。
+- 更新包结构为整个统一应用目录，而不是单个分析工具的 `app.zip`。
 - 版本号统一使用根 `package.json` 的 `version`。
 - 保留 `autoUpdate` 配置项语义，但由统一更新器读取。
 
@@ -386,7 +386,7 @@ yarn sync-upstream
 | 旧用户数据丢失 | 中 | 用户投诉 | 已改为 AppData 并在启动时从旧安装目录复制；原版独立程序仍需手动导入 |
 | 更新覆盖数据 | 低（已解决） | 历史记录丢失 | 数据移出安装目录；更新/重装不影响 AppData |
 | 安装包体积增加 | 低 | 下载变慢 | M2 记录实际体积；必要时做依赖外置 |
-| 两个游戏同时运行导致代理端口冲突 | 低 | 代理失败 | 单实例锁 + 启动器只允许一个游戏运行 |
+| 两个分析工具同时运行导致代理端口冲突 | 低 | 代理失败 | 单实例锁 + 启动器只允许一个分析工具运行 |
 | 许可证/署名缺失 | 低 | 合规问题 | 保留两个上游 LICENSE，README 注明来源 |
 
 ## 13. 里程碑
@@ -412,10 +412,10 @@ yarn sync-upstream
 
 ### M2 构建与启动器联调（已完成）
 
-- [x] `yarn build:games` 两个游戏构建成功。
-- [x] `yarn dev` 显示两个游戏“已就绪”（2026-11-24 真实桌面验证）。
+- [x] `yarn build:games` 两个分析工具构建成功。
+- [x] `yarn dev` 显示两个分析工具“已就绪”（2026-11-24 真实桌面验证）。
 - [x] 分别点击进入原神/星铁，界面正常加载（真实桌面验证）。
-- [x] 数据写入 `app.getPath('userData')/userData/<game>/`（真实运行后两个游戏目录均有数据）。
+- [x] 数据写入 `app.getPath('userData')/userData/<game>/`（真实运行后两个分析工具目录均有数据）。
 - [x] 统一定位数据到 AppData，并在启动时迁移旧安装目录数据。
 - [x] 记录安装包体积与构建耗时：v0.1.1 exe 59.8 MB、zip 80.5 MB；本地构建 248.5s、打包 33.2s。
 
@@ -437,7 +437,7 @@ yarn sync-upstream
 ### M5 可选：UI 统一
 
 - [ ] 统一启动页、设置页、更新提示。
-- [ ] 游戏主界面仍使用 vendor 原版。
+- [ ] 分析工具主界面仍使用 vendor 原版。
 - [ ] 不破坏 subtree 同步。
 
 ## 14. 决策记录（ADR）
@@ -449,17 +449,17 @@ yarn sync-upstream
 - 理由：subtree pull 是三方合并，本地补丁可保留；submodule 无法直接修改上游代码。
 - 代价：仓库体积略大；补丁冲突需要人工处理。
 
-### ADR-002：托盘常驻 + 独立游戏子进程
+### ADR-002：托盘常驻 + 独立分析工具子进程
 
-- 背景：两个上游的 IPC 通道大量重名，且用户需要在关闭游戏后继续使用启动器。
-- 决策：启动器进程常驻托盘，点击游戏时 `spawn` 一个带 `--wish-game=<id>` 的子进程；子进程带 `WISH_LAUNCHER_CHILD=1` 跳过单实例锁。
-- 理由：避免 IPC 冲突，启动器无需退出，关闭游戏后可自动恢复入口。
-- 代价：游戏运行时多一个 Electron 子进程；需要新增单实例 vendor 补丁。
+- 背景：两个上游的 IPC 通道大量重名，且用户需要在关闭分析工具后继续使用启动器。
+- 决策：启动器进程常驻托盘，点击分析工具时 `spawn` 一个带 `--wish-game=<id>` 的子进程；子进程带 `WISH_LAUNCHER_CHILD=1` 跳过单实例锁。
+- 理由：避免 IPC 冲突，启动器无需退出，关闭分析工具后可自动恢复入口。
+- 代价：分析工具运行时多一个 Electron 子进程；需要新增单实例 vendor 补丁。
 
 ### ADR-003：保留两套构建与依赖
 
 - 背景：element-plus 版本不同，UI 结构不同。
-- 决策：每个游戏使用自己的 `node_modules` 和 `.electron-vite` 配置构建。
+- 决策：每个分析工具使用自己的 `node_modules` 和 `.electron-vite` 配置构建。
 - 理由：避免依赖冲突与大范围 UI 回归。
 - 代价：安装依赖时间更长，产物中 UI 依赖重复。
 
@@ -473,7 +473,7 @@ yarn sync-upstream
 ### ADR-005：不做共享 core
 
 - 背景：两份代码有大量相同文件，但差异集中在核心业务。
-- 决策：不抽取 core，游戏逻辑留在 vendor。
+- 决策：不抽取 core，分析工具逻辑留在 vendor。
 - 理由：抽取 core 会使上游同步从自动合并退化为手工移植。
 - 代价：存在重复代码；通过统一入口和文档降低维护成本。
 
@@ -481,7 +481,7 @@ yarn sync-upstream
 
 1. 原版独立程序的老用户如何导入数据？统一版旧安装目录已自动迁移，原版独立程序仍需手动导入引导。
 2. 是否需要保留原神的 Gist 上传功能？当前保留在 vendor 中，入口不变。
-3. 两个游戏是否需要在启动器中显示最近一次数据更新时间？需要读取各自 `app.getPath('userData')/userData/<game>/`，属于 M5。
+3. 两个分析工具是否需要在启动器中显示最近一次数据更新时间？需要读取各自 `app.getPath('userData')/userData/<game>/`，属于 M5。
 4. 安装包体积若明显增大，是否将 Vue/element-plus/echarts 外置为共享资源？需要 M2 实测后决定。
 5. 是否支持 macOS/Linux？当前配置保留目标，但只在 Windows 上验证。
 6. 上游的 `RELAUNCH` 通道没有携带 `--wish-game`，重启后会回到启动器。当前更新已禁用，不会触发；统一更新器上线时需要改为自定义重启逻辑。

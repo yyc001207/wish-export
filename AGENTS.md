@@ -6,7 +6,7 @@
 
 把 `genshin-wish-export` 与 `star-rail-warp-export` 合并成**一个安装包、一个入口**的桌面工具，同时让两个上游仓库的更新可以**低成本、可验证地同步进来**。
 
-当前架构：`vendor/` 只读引入两个上游 + 托盘启动器 + 一次只运行一个游戏。
+当前架构：`vendor/` 只读引入两个上游 + 托盘启动器 + 一次只运行一个分析工具。
 
 ## 1. 必读顺序
 
@@ -26,13 +26,13 @@
 
 - 整体设计文档与协作文档。
 - 统一仓库骨架：`apps/desktop`、`scripts/`、`tests/contracts/`、`.github/workflows/`。
-- 统一启动器常驻托盘、游戏子进程切换、按游戏隔离的数据目录设计。
+- 统一启动器常驻托盘、分析工具子进程切换、按分析工具隔离的数据目录设计。
 - 上游导入、补丁、同步、构建、契约测试脚本。
 - 两个上游已导入 `vendor/`：原神 `c4675ab`、星铁 `8a0b664`。
 - 旧的两个上游克隆已删除；`vendor/` 是唯一代码来源。
 - vendor 补丁已应用（10 处），契约测试 9/9 通过。
-- 两个上游构建依赖已安装，两个游戏的 main 与 renderer 构建成功。
-- 启动器与两个游戏界面已在真实桌面验证通过（2026-11-24）：启动器可选游戏，两游戏分别可打开、导出正常，数据按游戏隔离落在 AppData。
+- 两个上游构建依赖已安装，两个分析工具的 main 与 renderer 构建成功。
+- 启动器与两个分析工具界面已在真实桌面验证通过（2026-11-24）：启动器里两个分析工具都可选择，分别可打开、导出正常，数据按分析工具隔离落在 AppData。
 - 应用图标已覆盖 Windows 窗口、托盘、exe 与 NSIS 安装包。
 - Windows exe 与 zip 由 GitHub Actions 构建产出（v0.1.1：exe 59.8 MB，zip 80.5 MB）；本地不保留 `release/` 产物。
 - v0.1.0、v0.1.1 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
@@ -54,7 +54,7 @@ wish-export/
 ├─ electron-builder.yml          # 打包配置
 ├─ apps/
 │  └─ desktop/
-│     ├─ src/main/bootstrap.js   # 统一入口：启动器 / 单游戏
+│     ├─ src/main/bootstrap.js   # 统一入口：启动器 / 单个分析工具
 │     └─ src/launcher/           # 启动器页面（原生 HTML/CSS/JS）
 ├─ scripts/
 │  ├─ import-upstream.ps1        # 首次导入两个上游（git subtree）
@@ -73,10 +73,10 @@ wish-export/
 
 1. **`vendor/` 是只读上游代码。**
    只允许 `scripts/apply-vendor-patches.js` 产生的 5 类、每个上游各 5 处、带 `[wish-export patch]` 标记的改动。禁止格式化、重排、批量改名、升级依赖、删除注释。
-2. **同一进程只加载一个游戏的主进程模块。**
-   两个上游都在 `getData.js` / `excel.js` / `UIGFJson.js` 里注册同名 `ipcMain.handle`。不要同时 `require` 两个游戏，也不要试图在进程内切换游戏。启动器一次只 spawn 一个游戏子进程，游戏退出后才能启动另一个。
-3. **数据目录必须按游戏隔离。**
-   游戏数据写入 `userData/<game>/`，不得写回 `userData/` 根目录。禁止把 `gacha-list-<uid>.json` 写到两个游戏共享的位置。
+2. **同一进程只加载一个分析工具的主进程模块。**
+   两个上游都在 `getData.js` / `excel.js` / `UIGFJson.js` 里注册同名 `ipcMain.handle`。不要同时 `require` 两个分析工具，也不要试图在进程内切换分析工具。启动器一次只 spawn 一个分析工具子进程，分析工具退出后才能启动另一个。
+3. **数据目录必须按分析工具隔离。**
+   分析工具数据写入 `userData/<game>/`，不得写回 `userData/` 根目录。禁止把 `gacha-list-<uid>.json` 写到两个分析工具共享的位置。
 4. **不改导出语义。**
    UIGF/SRGF 的字段名、时间格式、排序、`uigf_version` / `srgf_version` 都按上游实现。不要为了“统一”而重写序列化。
 5. **不改技术栈与关键版本。**
@@ -107,7 +107,7 @@ wish-export/
 | `yarn patch-vendor` | 应用 5 类 vendor 补丁（每个上游 5 处） | 幂等；同步上游后也要跑 |
 | `yarn setup` | 安装两个上游的构建依赖 | 跳过 Electron 二进制与 postinstall |
 | `yarn test` | 运行契约测试 | 未导入 vendor 时自动跳过 |
-| `yarn build:games` | 构建两个游戏的 main + renderer | 输出到 `dist/electron/games/` |
+| `yarn build:games` | 构建两个分析工具的 main + renderer | 输出到 `dist/electron/games/` |
 | `yarn dev` | 打开统一启动器 | 需要先 `build:games` |
 | `yarn start:genshin` | 直接启动原神模块 | 跳过启动器 |
 | `yarn start:starrail` | 直接启动星铁模块 | 跳过启动器 |
@@ -118,7 +118,7 @@ wish-export/
 - 推送到 `main` 且涉及代码、图标、构建或 `vendor/`：`build.yml` 自动构建 exe/zip 并上传 workflow artifact；
 - 推送 `v*` 标签：`release.yml` 构建并创建 GitHub Release。
 
-单游戏热更新开发不要走统一入口，直接在上游目录里跑：
+单个分析工具热更新开发不要走统一入口，直接在上游目录里跑：
 
 ```powershell
 yarn --cwd vendor/genshin dev
@@ -171,9 +171,9 @@ yarn --cwd vendor/starrail dev
 一个任务算完成，至少满足对应项：
 
 - [ ] `yarn test` 全部通过（未导入 vendor 时允许跳过）。
-- [ ] `yarn build:games` 两个游戏都构建成功。
-- [ ] `yarn dev` 能打开启动器，并正确显示两个游戏的构建状态。
-- [ ] 点击任一游戏能打开对应界面；两个游戏不会同时运行。
+- [ ] `yarn build:games` 两个分析工具都构建成功。
+- [ ] `yarn dev` 能打开启动器，并正确显示两个分析工具的构建状态。
+- [ ] 点击任一分析工具能打开对应界面；两个分析工具不会同时运行。
 - [ ] 数据分别写入 `userData/genshin/`、`userData/starrail/`。
 - [ ] 没有出现 “Attempted to register a second handler” 或 IPC 重复注册错误。
 - [ ] 没有修改 `vendor/` 里补丁标记之外的内容。
@@ -183,18 +183,18 @@ yarn --cwd vendor/starrail dev
 
 | 坑 | 现象 | 处理 |
 | --- | --- | --- |
-| IPC 通道重名 | 同时加载两个游戏时直接抛错 | 启动器一次只 spawn 一个游戏子进程 |
-| 数据文件重名 | 两个游戏都写 `userData/gacha-list-<uid>.json`，互相覆盖 | 已通过补丁改为 `userData/<game>/` |
+| IPC 通道重名 | 同时加载两个分析工具时直接抛错 | 启动器一次只 spawn 一个分析工具子进程 |
+| 数据文件重名 | 两个分析工具都写 `userData/gacha-list-<uid>.json`，互相覆盖 | 已通过补丁改为 `userData/<game>/` |
 | 上游路径假设 | 上游认为 `main.js` 在 `src/main/`、renderer 在 `dist/electron/renderer/` | 统一入口注入 `WISH_APP_ROOT` / `WISH_RENDERER` |
 | 上游自更新 | 会用原版 app.zip 覆盖整个统一安装目录 | 已通过 `WISH_UPDATE_DISABLED` 禁用；统一更新器另行实现 |
-| element-plus 版本不同 | 原神 1.3.0-beta.7，星铁 2.3.7 | 每个游戏使用自己的 `node_modules` 构建，不合并依赖 |
+| element-plus 版本不同 | 原神 1.3.0-beta.7，星铁 2.3.7 | 每个分析工具使用自己的 `node_modules` 构建，不合并依赖 |
 | UIGF / SRGF 差异 | 原神 UIGF 3.0/4.1，星铁 SRGF/UIGF 4.x | 导出逻辑留在各自 vendor，不抽公共序列化器 |
 | 星铁数据频繁更新 | `idJson.json` 随游戏版本更新 | 依赖 `yarn sync-upstream` + 契约测试 |
 | 原神上游长期低活跃 | 最后提交 2026-03-17 | 原神改动以修复为主，不要等待上游新功能 |
 | 旧版数据目录 | 旧程序各自在安装目录下写 `userData/` | 统一版旧安装目录会自动迁移到 AppData；原版独立程序的数据用启动器“导入原版数据”手动导入 |
 | 上游 `RELAUNCH` | 上游重启不带 `--wish-game`，会回到启动器 | 当前更新已禁用，不会触发；统一更新器上线前处理 |
 | NSIS 安装目录 | 程序安装到只读目录会失败；数据现在在 AppData，不受安装目录影响 | 默认安装到当前用户目录；数据目录定期备份 |
-| 游戏子进程单实例锁 | 启动器已持有单实例锁，游戏子进程会被判定为第二实例 | 子进程带 `WISH_LAUNCHER_CHILD=1`，由 vendor 补丁跳过单实例锁 |
+| 分析工具子进程单实例锁 | 启动器已持有单实例锁，分析工具子进程会被判定为第二实例 | 子进程带 `WISH_LAUNCHER_CHILD=1`，由 vendor 补丁跳过单实例锁 |
 
 ## 10. 文档地图
 
