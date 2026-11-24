@@ -1,0 +1,118 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install root dependencies
+        run: yarn install --network-timeout 600000
+
+      - name: Install vendor dependencies
+        run: yarn setup
+
+      - name: Verify vendor patches
+        run: yarn patch-vendor
+
+      - name: Contract tests
+        run: yarn test
+
+      - name: Build game bundles
+        run: yarn build:games
+
+      - name: Build Windows artifacts
+        run: yarn run electron-builder --win --publish never
+
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tagVersion = "${{ github.ref_name }}".TrimStart('v')
+          if ($version -ne $tagVersion) {
+            throw "package.json version ($version) 与标签 ($tagVersion) 不一致"
+          }
+
+          $genshinLog = git log -1 --format=%B --grep="git-subtree-dir: vendor/genshin"
+          $starrailLog = git log -1 --format=%B --grep="git-subtree-dir: vendor/starrail"
+          $genshinHash = [regex]::Match($genshinLog, 'git-subtree-split: ([0-9a-f]+)').Groups[1].Value
+          $starrailHash = [regex]::Match($starrailLog, 'git-subtree-split: ([0-9a-f]+)').Groups[1].Value
+          if (-not $genshinHash -or -not $starrailHash) {
+            throw '无法从 subtree 提交中读取上游快照'
+          }
+
+          $idJsonVersion = (Get-Content vendor/starrail/src/idJson.json -Raw | ConvertFrom-Json).version
+          $artifacts = Get-ChildItem release -File | Where-Object { $_.Extension -in '.exe', '.zip' }
+          if (-not $artifacts) {
+            throw '没有找到 exe/zip 产物'
+          }
+
+          $lines = @(
+            "## Wish Export v$version",
+            "",
+            "### 上游快照",
+            "",
+            "- 原神：$genshinHash",
+            "- 星铁：$starrailHash",
+            "- 星铁 idJson：$idJsonVersion",
+            "",
+            "### 安装包",
+            ""
+          )
+          foreach ($artifact in $artifacts) {
+            $size = [math]::Round($artifact.Length / 1MB, 1)
+            $lines += "- $($artifact.Name)（$size MB）"
+          }
+          $lines += @(
+            "",
+            "### 说明",
+            "",
+            "- 安装版默认安装到当前用户目录，数据保存在安装目录的 userData/<game>/。",
+            "- 不要把程序安装到只读目录。",
+            "- 卸载前请备份 userData，避免历史记录丢失。",
+            "- 安装包未签名，Windows SmartScreen 可能提示未知发布者。",
+            "- 旧版不会自动升级，旧数据需要手动导入。"
+          )
+          $lines -join "`n" | Set-Content release-notes.md -Encoding UTF8
+
+      - name: Generate checksums
+        shell: pwsh
+        run: |
+          $artifacts = Get-ChildItem release -File | Where-Object { $_.Extension -in '.exe', '.zip' }
+          $lines = foreach ($artifact in $artifacts) {
+            $hash = (Get-FileHash $artifact.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($artifact.Name)"
+          }
+          $lines | Set-Content SHA256SUMS.txt -Encoding UTF8
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Wish Export ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: |
+            release/*.exe
+            release/*.zip
+            SHA256SUMS.txt
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
