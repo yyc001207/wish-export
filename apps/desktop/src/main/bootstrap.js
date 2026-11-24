@@ -81,7 +81,39 @@ function startGame (id) {
   // 统一版本禁止触发上游自更新，否则会用原版 zip 覆盖整个安装目录
   process.env.WISH_UPDATE_DISABLED = '1'
 
+  installReturnToLauncher()
   require(entry.main)
+}
+
+/**
+ * 关闭游戏窗口后回到启动器，而不是直接退出整个程序。
+ *
+ * 上游 main.js 会在 window-all-closed 时调用 app.quit()。
+ * 这里先注册同事件把状态记下来，再在 before-quit 中拦截一次，
+ * 用不带 --wish-game 的参数重启，回到启动器。
+ * 第二次 app.quit() 不再拦截，保证代理清理等 will-quit 逻辑正常执行。
+ */
+function installReturnToLauncher () {
+  let allWindowsClosed = false
+  let relaunching = false
+
+  app.on('window-all-closed', () => {
+    allWindowsClosed = true
+  })
+
+  app.on('before-quit', event => {
+    if (!allWindowsClosed || relaunching) return
+
+    relaunching = true
+    event.preventDefault()
+
+    const args = process.argv
+      .slice(1)
+      .filter(arg => !arg.startsWith(WISH_GAME_ARG))
+
+    app.relaunch({ args })
+    setImmediate(() => app.quit())
+  })
 }
 
 function startLauncher () {
