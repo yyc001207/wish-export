@@ -129,7 +129,7 @@
    - `WISH_UPDATE_DISABLED=1`：禁用上游自更新；
    - 然后 `require` 对应游戏的 `main/main.js`。
 7. 游戏的 `main.js` 创建自己的窗口、注册自己的 IPC、加载自己的渲染器。
-8. 关闭游戏窗口时，`bootstrap.js` 拦截一次 `before-quit`，用不带 `--wish-game` 的参数重启，回到启动器；第二次 `quit` 正常执行，保留上游的代理清理逻辑。
+8. 关闭游戏窗口时，`bootstrap.js` 拦截一次 `before-quit`，清除 `WISH_GAME` 等环境变量，并用带 `--wish-launcher` 的参数重启回到启动器；第二次 `quit` 正常执行，保留上游的代理清理逻辑。
 
 ### 6.2 为什么用重启切换，而不是进程内切换
 
