@@ -11,14 +11,24 @@ const importDetail = document.querySelector('#import-detail')
 const importGenshinButton = document.querySelector('#import-genshin')
 const importStarrailButton = document.querySelector('#import-starrail')
 const importCancelButton = document.querySelector('#import-cancel')
+const checkUpdateButton = document.querySelector('#check-update')
+const updatePanel = document.querySelector('#update-panel')
+const updateText = document.querySelector('#update-text')
+const updateActionButton = document.querySelector('#update-action')
+const updateReleasesButton = document.querySelector('#update-releases')
 
 let runningGameId = ''
 let gameNames = {}
 let importSource = ''
 let importBusy = false
+let updateStatus = 'idle'
 
 window.launcher.onStatusChanged(status => {
   renderStatus(status)
+})
+
+window.launcher.onUpdateState(state => {
+  renderUpdate(state)
 })
 
 init()
@@ -27,6 +37,7 @@ async function init () {
   try {
     const status = await window.launcher.getStatus()
     renderStatus(status)
+    renderUpdate(await window.launcher.getUpdateState())
   } catch (error) {
     showMessage(`读取启动信息失败：${error.message}`)
   }
@@ -142,6 +153,9 @@ importButton.addEventListener('click', pickAndImport)
 importGenshinButton.addEventListener('click', () => applyImport('genshin'))
 importStarrailButton.addEventListener('click', () => applyImport('starrail'))
 importCancelButton.addEventListener('click', closeImportDialog)
+checkUpdateButton.addEventListener('click', requestUpdateCheck)
+updateActionButton.addEventListener('click', handleUpdateAction)
+updateReleasesButton.addEventListener('click', () => window.launcher.openReleases())
 
 importDialog.addEventListener('click', event => {
   if (event.target === importDialog) closeImportDialog()
@@ -223,6 +237,91 @@ function closeImportDialog () {
 function syncImportButton () {
   importButton.disabled = Boolean(runningGameId) || importBusy
   importButton.title = runningGameId ? '请先关闭正在运行的分析工具' : ''
+}
+
+async function requestUpdateCheck () {
+  checkUpdateButton.disabled = true
+  try {
+    renderUpdate(await window.launcher.checkUpdate())
+  } catch (error) {
+    showMessage(`检查更新失败：${error.message}`)
+  } finally {
+    if (updateStatus !== 'checking') checkUpdateButton.disabled = false
+  }
+}
+
+async function handleUpdateAction () {
+  if (updateStatus === 'available') {
+    updateActionButton.disabled = true
+    try {
+      renderUpdate(await window.launcher.downloadUpdate())
+    } catch (error) {
+      showMessage(`下载失败：${error.message}`)
+    } finally {
+      updateActionButton.disabled = false
+    }
+    return
+  }
+
+  if (updateStatus === 'ready') {
+    if (runningGameId) {
+      showMessage('请先关闭正在运行的分析工具，再安装新版本。')
+      return
+    }
+    if (!window.confirm('安装完成后启动器会自动重启。现在安装吗？')) return
+    try {
+      const result = await window.launcher.installUpdate()
+      if (result && !result.ok) showMessage(result.message)
+    } catch (error) {
+      showMessage(`安装失败：${error.message}`)
+    }
+  }
+}
+
+function renderUpdate (state) {
+  if (!state) return
+  updateStatus = state.status || 'idle'
+  updatePanel.hidden = updateStatus === 'idle' || updateStatus === 'disabled'
+  updateActionButton.hidden = true
+  updateReleasesButton.hidden = true
+  updateActionButton.disabled = false
+
+  const percent = Math.round((state.progress || 0) * 100)
+  switch (updateStatus) {
+    case 'checking':
+      updateText.textContent = '正在检查更新…'
+      break
+    case 'none':
+      updateText.textContent = `已是最新版本（v${state.version || version.textContent.replace(/^v/, '')}）`
+      break
+    case 'available':
+      updateText.textContent = `发现新版本 v${state.version}`
+      updateActionButton.hidden = false
+      updateActionButton.textContent = '下载并安装'
+      break
+    case 'downloading':
+      updateText.textContent = `正在下载新版本… ${percent}%`
+      updateActionButton.hidden = false
+      updateActionButton.disabled = true
+      updateActionButton.textContent = '下载中…'
+      break
+    case 'ready':
+      updateText.textContent = state.message || '新版本已下载，可以安装'
+      updateActionButton.hidden = false
+      updateActionButton.textContent = '立即安装并重启'
+      break
+    case 'installing':
+      updateText.textContent = state.message || '正在安装…'
+      break
+    case 'error':
+      updateText.textContent = state.message || '更新失败'
+      updateReleasesButton.hidden = false
+      break
+    default:
+      break
+  }
+
+  checkUpdateButton.disabled = ['checking', 'downloading', 'installing'].includes(updateStatus)
 }
 
 function showMessage (text) {

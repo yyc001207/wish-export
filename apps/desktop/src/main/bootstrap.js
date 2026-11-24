@@ -4,13 +4,14 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell, Tray } = 
 const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
-const { migrateLegacyUserData } = require('./migrate-user-data')
+const { copyDirMissing, migrateLegacyUserData } = require('./migrate-user-data')
 const {
   findLegacyDataDirHint,
   importLegacyData,
   listLegacyDataFiles,
   resolveLegacyDataDir
 } = require('./import-legacy-data')
+const updater = require('./updater')
 
 const GAMES = {
   genshin: {
@@ -37,6 +38,7 @@ const LAUNCHER_PRELOAD = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher'
 const APP_ICON = path.join(APP_DIR, 'apps', 'desktop', 'assets', 'icon.png')
 const TRAY_ICON = path.join(APP_DIR, 'apps', 'desktop', 'assets', 'tray.png')
 const WISH_GAME_ARG = '--wish-game='
+const RELEASES_PAGE = 'https://github.com/yyc001207/wish-export/releases'
 const REQUESTED_GAME = getRequestedGame()
 
 if (!IS_DEV) {
@@ -111,7 +113,8 @@ function startGame (id) {
   process.env.WISH_GAME = id
   process.env.WISH_APP_ROOT = DATA_ROOT
   process.env.WISH_RENDERER = entry.renderer
-  // 统一版本禁止触发上游自更新，否则会用原版 zip 覆盖整个安装目录
+  // 上游自更新永久禁用，否则会用原版 zip 覆盖整个安装目录；
+  // 统一版本由启动器里的统一更新器负责更新（apps/desktop/src/main/updater.js）。
   process.env.WISH_UPDATE_DISABLED = '1'
 
   require(entry.main)
@@ -134,6 +137,9 @@ function startLauncher () {
   let gameProcess = null
   let runningGame = ''
   let isQuitting = false
+  let latestRelease = null
+  let installerPath = ''
+  let updateState = { status: 'idle', version: '', progress: 0, message: '' }
 
   ipcMain.handle('LAUNCHER_STATUS', () => getStatus())
   ipcMain.handle('LAUNCH_GAME', (event, id) => launchGame(id))
@@ -145,10 +151,19 @@ function startLauncher () {
   ipcMain.handle('QUIT_APP', () => quitApp())
   ipcMain.handle('IMPORT_PICK_DIR', () => pickLegacyDir())
   ipcMain.handle('IMPORT_LEGACY_DATA', (event, payload) => importLegacy(payload))
+  ipcMain.handle('UPDATE_STATUS', () => updateState)
+  ipcMain.handle('UPDATE_CHECK', () => checkUpdate({ manual: true }))
+  ipcMain.handle('UPDATE_DOWNLOAD', () => downloadUpdate())
+  ipcMain.handle('UPDATE_INSTALL', () => installUpdate())
+  ipcMain.handle('OPEN_RELEASES', () => shell.openExternal(RELEASES_PAGE))
 
   app.whenReady().then(async () => {
     await createTray()
     createWindow()
+    // 启动后静默检查一次；检查失败不打扰用户，底部按钮仍可手动重试
+    setTimeout(() => {
+      if (!isQuitting) checkUpdate()
+    }, 1200)
   })
 
   app.on('second-instance', () => showLauncher())
@@ -390,6 +405,137 @@ function startLauncher () {
       return { ok: true, copied, skipped, targetDir }
     } catch (error) {
       console.error('[import] 导入旧数据失败：', error)
+      return { ok: false, message: error.message }
+    }
+  }
+
+  /**
+   * 统一更新器：检查 → 下载并校验 → 退出启动器后由 NSIS 静默安装。
+   * 上游自更新始终保持禁用（WISH_UPDATE_DISABLED），更新只走这里。
+   */
+  function setUpdaterState (patch) {
+    updateState = { ...updateState, ...patch }
+    if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
+      win.webContents.send('UPDATE_STATE_CHANGED', updateState)
+    }
+  }
+
+  async function checkUpdate ({ manual = false } = {}) {
+    if (!app.isPackaged) {
+      setUpdaterState({ status: 'disabled', message: '开发模式不检查更新' })
+      return updateState
+    }
+    if (updateState.status === 'downloading' || updateState.status === 'installing') {
+      return updateState
+    }
+
+    setUpdaterState({ status: 'checking', message: '正在检查更新…', progress: 0 })
+    try {
+      const result = await updater.checkForUpdate({ currentVersion: app.getVersion() })
+      if (result.updateAvailable) {
+        latestRelease = result.release
+        setUpdaterState({
+          status: 'available',
+          version: result.version,
+          message: `发现新版本 v${result.version}`
+        })
+      } else {
+        latestRelease = null
+        setUpdaterState({ status: 'none', version: result.currentVersion, message: '已是最新版本' })
+      }
+    } catch (error) {
+      console.error('[update] 检查更新失败：', error)
+      setUpdaterState({
+        status: 'error',
+        message: manual ? `检查更新失败：${error.message}` : ''
+      })
+    }
+    return updateState
+  }
+
+  async function downloadUpdate () {
+    if (!latestRelease) await checkUpdate({ manual: true })
+    if (!latestRelease) return updateState
+    if (updateState.status === 'downloading') return updateState
+
+    const dir = path.join(DATA_ROOT, 'updates')
+    let lastPercent = -1
+    setUpdaterState({ status: 'downloading', progress: 0, message: '正在下载新版本…' })
+    try {
+      const { filePath, verified } = await updater.downloadUpdate({
+        release: latestRelease,
+        dir,
+        onProgress: (progress) => {
+          const percent = Math.floor(progress * 100)
+          if (percent === lastPercent) return
+          lastPercent = percent
+          setUpdaterState({ progress })
+        }
+      })
+      installerPath = filePath
+      setUpdaterState({
+        status: 'ready',
+        progress: 1,
+        message: verified ? '新版本已下载并通过 SHA256 校验' : '新版本已下载（发布包未提供校验文件）'
+      })
+    } catch (error) {
+      console.error('[update] 下载更新失败：', error)
+      setUpdaterState({ status: 'error', message: `下载失败：${error.message}` })
+    }
+    return updateState
+  }
+
+  /** 安装前把 userData/ 再备份一份；备份失败不阻断，但会写日志。 */
+  function backupUserData () {
+    try {
+      const source = path.join(DATA_ROOT, 'userData')
+      if (!fs.existsSync(source)) return ''
+      const target = path.join(DATA_ROOT, 'updates', `userData-backup-${app.getVersion()}`)
+      if (fs.existsSync(target)) return target
+      copyDirMissing(source, target)
+      return target
+    } catch (error) {
+      console.error('[update] 备份 userData 失败：', error)
+      return ''
+    }
+  }
+
+  /**
+   * 安装包会替换整个应用目录，必须等启动器退出后再运行。
+   * 用一个等待脚本延迟 2 秒启动 NSIS，避免安装器读到被占用的 exe。
+   */
+  function installUpdate () {
+    if (!installerPath || !fs.existsSync(installerPath)) {
+      return { ok: false, message: '还没有下载安装包' }
+    }
+    if (runningGame) {
+      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前分析工具` }
+    }
+    if (process.platform !== 'win32') {
+      return { ok: false, message: '当前系统不支持自动安装，请从 Releases 手动下载' }
+    }
+
+    try {
+      const backup = backupUserData()
+      const scriptPath = path.join(DATA_ROOT, 'updates', 'install-update.cmd')
+      const args = updater.buildInstallerArgs().join(' ')
+      fs.writeFileSync(
+        scriptPath,
+        ['@echo off', 'timeout /t 2 /nobreak >nul', `start "" "${installerPath}" ${args}`].join('\r\n'),
+        'utf8'
+      )
+
+      setUpdaterState({ status: 'installing', message: '正在安装新版本，程序即将重启…' })
+      const child = spawn('cmd.exe', ['/c', scriptPath], { detached: true, stdio: 'ignore' })
+      child.unref()
+
+      isQuitting = true
+      stopGameProcess()
+      setTimeout(() => app.quit(), 300)
+      return { ok: true, backup }
+    } catch (error) {
+      console.error('[update] 启动安装失败：', error)
+      setUpdaterState({ status: 'error', message: `安装失败：${error.message}` })
       return { ok: false, message: error.message }
     }
   }

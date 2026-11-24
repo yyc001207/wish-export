@@ -24,9 +24,16 @@
 
       <p id="message" class="message" role="status"></p>
 
+      <div id="update-panel" class="update-panel" hidden>
+        <span id="update-text" class="update-text"></span>
+        <button id="update-action" class="ghost-button" type="button" hidden>下载并安装</button>
+        <button id="update-releases" class="ghost-button" type="button" hidden>打开发布页</button>
+      </div>
+
       <footer class="footer">
         <span id="version" class="version">v0.0.0</span>
         <div class="footer-actions">
+          <button id="check-update" class="ghost-button" type="button">检查更新</button>
           <button id="import-data" class="ghost-button" type="button">导入原版数据</button>
           <button id="open-data" class="ghost-button" type="button">打开数据目录</button>
           <button id="quit" class="ghost-button" type="button">退出</button>
