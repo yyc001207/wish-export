@@ -157,10 +157,10 @@ vite.config.ts.timestamp-*
 .nx/migrate-runs
 
 # wish-export 统一仓库
-release/
+/release/
 userData/
-update/
-update-dev/
+/update/
+/update-dev/
 vendor/*/node_modules/
 vendor/*/dist/
 vendor/*/userData/
