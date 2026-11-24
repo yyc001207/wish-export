@@ -47,7 +47,7 @@ jobs:
         run: node scripts/apply-vendor-patches.js
 
       - name: Contract tests
-        run: node --test tests/contracts
+        run: node --test tests
 
       - name: Create pull request
         if: always()
