@@ -23,6 +23,7 @@
 - [docs/architecture.md](docs/architecture.md)：模块、IPC、数据模型、导出流程
 - [docs/upstream-sync.md](docs/upstream-sync.md)：上游同步与冲突处理
 - [docs/development.md](docs/development.md)：环境、开发、构建、调试、打包
+- [docs/versioning.md](docs/versioning.md)：版本号、提交规范、发布与回滚
 - [docs/tasks.md](docs/tasks.md)：任务看板与验收标准
 
 ## 快速开始（开发）

@@ -17,7 +17,8 @@
 | 3 | [docs/architecture.md](docs/architecture.md) | 改主进程、IPC、数据模型、导出逻辑 |
 | 4 | [docs/upstream-sync.md](docs/upstream-sync.md) | 动 `vendor/`、跑同步、处理冲突 |
 | 5 | [docs/development.md](docs/development.md) | 搭环境、构建、调试、打包 |
-| 6 | [docs/tasks.md](docs/tasks.md) | 领取任务、更新进度 |
+| 6 | [docs/versioning.md](docs/versioning.md) | 版本号、发布、标签、回滚 |
+| 7 | [docs/tasks.md](docs/tasks.md) | 领取任务、更新进度 |
 
 ## 2. 当前状态（2026-11-24）
 
@@ -85,6 +86,8 @@ wish-export/
    `authkey`、`stoken`、cookie、用户 UID 不写入日志、不提交、不外传。调试输出必须脱敏。
 10. **任务闭环。**
     改完代码要更新 [docs/tasks.md](docs/tasks.md) 的状态，并在汇报中写清：改了什么、怎么验证、还剩什么、有什么风险。
+11. **版本与发布遵循 [docs/versioning.md](docs/versioning.md)。**
+    AI 不得主动提升版本号、打标签或推送，除非任务明确标注为发布。
 
 ## 5. 常用命令
 
@@ -184,4 +187,5 @@ yarn --cwd vendor/starrail dev
 - [docs/architecture.md](docs/architecture.md)：模块职责、IPC 通道、数据模型、导出流程。
 - [docs/upstream-sync.md](docs/upstream-sync.md)：subtree 同步、补丁清单、冲突处理、CI。
 - [docs/development.md](docs/development.md)：环境搭建、开发、构建、调试、打包、发布。
+- [docs/versioning.md](docs/versioning.md)：版本号规则、提交规范、发布流程、热修复与回滚。
 - [docs/tasks.md](docs/tasks.md)：里程碑、任务清单、验收标准、当前进度。

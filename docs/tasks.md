@@ -34,6 +34,7 @@
 | T0.6 | 导入 / 同步 / 补丁 / 构建脚本 | DONE | `scripts/` |
 | T0.7 | 契约测试与 CI | DONE | `tests/contracts/`、`.github/workflows/`；CI 尚未在远端实际运行 |
 | T0.8 | 本地验证 | DONE | `node --check` 全部通过；`yarn test` 9 项全部按预期跳过，退出码 0 |
+| T0.9 | 版本迭代规则 | DONE | `docs/versioning.md`；AGENTS、README、开发与同步文档已建立引用 |
 
 ## M1：上游导入与补丁
 

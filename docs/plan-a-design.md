@@ -3,7 +3,7 @@
 - 状态：已确认，M0 骨架已落地
 - 日期：2026-11-24
 - 适用范围：`genshin-wish-export` 与 `star-rail-warp-export` 的合并
-- 相关文档：[架构](architecture.md)、[上游同步](upstream-sync.md)、[开发](development.md)、[任务](tasks.md)
+- 相关文档：[架构](architecture.md)、[上游同步](upstream-sync.md)、[开发](development.md)、[版本规则](versioning.md)、[任务](tasks.md)
 
 ## 1. 背景
 

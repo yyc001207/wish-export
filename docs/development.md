@@ -268,20 +268,21 @@ electron-builder
 
 ## 7. 发布
 
-当前阶段没有统一自动更新，发布流程：
+完整规则见 [versioning.md](versioning.md)。这里只列执行顺序：
 
-1. 更新根 `package.json` 的 `version`；
-2. `yarn test`；
-3. `yarn build:games`；
-4. `yarn package`；
-5. 在 Windows 上手工验证两个游戏；
-6. 上传 `release/` 中的 zip 到发布渠道；
-7. 在发布说明中写明：
-   - 这是统一版，旧版不会自动升级；
-   - 旧数据需要手动导入（M3 之前）；
-   - 已知限制。
+1. 确认工作区干净，上游已同步到预期快照；
+2. `yarn patch-vendor`、`yarn test`、`yarn build:games` 全部通过；
+3. 按版本规则修改根 `package.json` 的 `version`；
+4. `yarn package`，在 Windows 上解压并手工验证两个游戏；
+5. 提交 `chore(release): vX.Y.Z`，打附注标签 `vX.Y.Z`；
+6. 上传 `release/` 产物，按版本规则填写发布说明。
 
-不要恢复上游自更新：`WISH_UPDATE_DISABLED` 必须保持为 `1`，直到统一更新器上线。
+注意：
+
+- 发布说明必须记录两个上游的 `git-subtree-split` 与星铁 `idJson` 版本；
+- 旧版不会自动升级到统一版，发布说明要写清迁移方式；
+- 不要恢复上游自更新：`WISH_UPDATE_DISABLED` 必须保持为 `1`，直到统一更新器上线；
+- 不要自行打标签或推送，除非任务明确要求发布。
 
 ## 8. 代码风格
 
