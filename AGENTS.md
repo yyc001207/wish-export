@@ -26,18 +26,18 @@
 
 - 方案 A 的设计文档与协作文档。
 - 统一仓库骨架：`apps/desktop`、`scripts/`、`tests/contracts/`、`.github/workflows/`。
-- 统一启动器、游戏切换（`app.relaunch`）、按游戏隔离的数据目录方案。
+- 统一启动器常驻托盘、游戏子进程切换、按游戏隔离的数据目录方案。
 - 上游导入、补丁、同步、构建、契约测试脚本。
 - 两个上游已导入 `vendor/`：原神 `c4675ab`、星铁 `8a0b664`。
 - 旧的两个上游克隆已删除；`vendor/` 是唯一代码来源。
-- vendor 补丁已应用（8 处），契约测试 9/9 通过。
+- vendor 补丁已应用（10 处），契约测试 9/9 通过。
 - 两个上游构建依赖已安装，两个游戏的 main 与 renderer 构建成功。
-- Windows exe 与 zip 已在本地产出（exe 59.5 MB，zip 80.4 MB）。
+- Windows exe 与 zip 已在本地产出（exe 59.5 MB，zip 80.5 MB）。
 
 未完成（不要假装已存在）：
 
 - 启动器与两个游戏界面尚未在真实桌面点击验证（当前执行沙箱无法启动 Electron 窗口）。
-- 关闭游戏窗口返回启动器已实现并打入 exe，待真实桌面验证。
+- 启动器常驻托盘、关闭游戏后自动回到启动器已实现并打入 exe，待真实桌面验证。
 - 统一更新器未实现；当前通过补丁禁用上游自更新。
 - 旧版本数据自动迁移未实现。
 - 单窗口统一 UI 未实现，也不在当前范围。
@@ -59,7 +59,7 @@ wish-export/
 ├─ scripts/
 │  ├─ import-upstream.ps1        # 首次导入两个上游（git subtree）
 │  ├─ sync-upstream.ps1          # 日常同步两个上游
-│  ├─ apply-vendor-patches.js    # 4 类最小补丁，幂等
+│  ├─ apply-vendor-patches.js    # 5 类最小补丁，幂等
 │  ├─ setup-vendor.js            # 安装两个上游的构建依赖
 │  └─ build-games.js             # 分别构建并收集到 dist/electron/games
 ├─ tests/contracts/              # 上游契约测试（Node 内置 test runner）
@@ -72,9 +72,9 @@ wish-export/
 ## 4. 铁律
 
 1. **`vendor/` 是只读上游代码。**
-   只允许 `scripts/apply-vendor-patches.js` 产生的 4 类、每个上游各 4 处、带 `[wish-export patch]` 标记的改动。禁止格式化、重排、批量改名、升级依赖、删除注释。
+   只允许 `scripts/apply-vendor-patches.js` 产生的 5 类、每个上游各 5 处、带 `[wish-export patch]` 标记的改动。禁止格式化、重排、批量改名、升级依赖、删除注释。
 2. **同一进程只加载一个游戏的主进程模块。**
-   两个上游都在 `getData.js` / `excel.js` / `UIGFJson.js` 里注册同名 `ipcMain.handle`。不要同时 `require` 两个游戏，也不要试图在进程内切换游戏。切换游戏一律通过 `app.relaunch()`。
+   两个上游都在 `getData.js` / `excel.js` / `UIGFJson.js` 里注册同名 `ipcMain.handle`。不要同时 `require` 两个游戏，也不要试图在进程内切换游戏。启动器一次只 spawn 一个游戏子进程，游戏退出后才能启动另一个。
 3. **数据目录必须按游戏隔离。**
    游戏数据写入 `userData/<game>/`，不得写回 `userData/` 根目录。禁止把 `gacha-list-<uid>.json` 写到两个游戏共享的位置。
 4. **不改导出语义。**
@@ -102,7 +102,7 @@ wish-export/
 | --- | --- | --- |
 | `yarn install` | 安装根依赖（Electron、electron-builder） | 首次执行 |
 | `yarn import-upstream` | 用 `git subtree` 导入两个上游到 `vendor/` | 会创建 git 提交；只需一次 |
-| `yarn patch-vendor` | 应用 4 类 vendor 补丁（每个上游 4 处） | 幂等；同步上游后也要跑 |
+| `yarn patch-vendor` | 应用 5 类 vendor 补丁（每个上游 5 处） | 幂等；同步上游后也要跑 |
 | `yarn setup` | 安装两个上游的构建依赖 | 跳过 Electron 二进制与 postinstall |
 | `yarn test` | 运行契约测试 | 未导入 vendor 时自动跳过 |
 | `yarn build:games` | 构建两个游戏的 main + renderer | 输出到 `dist/electron/games/` |
@@ -177,7 +177,7 @@ yarn --cwd vendor/starrail dev
 
 | 坑 | 现象 | 处理 |
 | --- | --- | --- |
-| IPC 通道重名 | 同时加载两个游戏时直接抛错 | 一次只 require 一个游戏；切换用 `app.relaunch()` |
+| IPC 通道重名 | 同时加载两个游戏时直接抛错 | 启动器一次只 spawn 一个游戏子进程 |
 | 数据文件重名 | 两个游戏都写 `userData/gacha-list-<uid>.json`，互相覆盖 | 已通过补丁改为 `userData/<game>/` |
 | 上游路径假设 | 上游认为 `main.js` 在 `src/main/`、renderer 在 `dist/electron/renderer/` | 统一入口注入 `WISH_APP_ROOT` / `WISH_RENDERER` |
 | 上游自更新 | 会用原版 app.zip 覆盖整个统一安装目录 | 已通过 `WISH_UPDATE_DISABLED` 禁用；统一更新器另行实现 |
@@ -188,7 +188,7 @@ yarn --cwd vendor/starrail dev
 | 旧版数据目录 | 旧程序各自在安装目录下写 `userData/` | 迁移功能尚未实现，见 M3 任务 |
 | 上游 `RELAUNCH` | 上游重启不带 `--wish-game`，会回到启动器 | 当前更新已禁用，不会触发；统一更新器上线前处理 |
 | NSIS 安装目录 | 数据写在安装目录；安装到只读目录会写失败，卸载可能删除数据 | 默认安装到当前用户目录；发布说明提示备份 `userData` |
-| `app.relaunch` 继承环境变量 | 关闭游戏后可能重复进入原游戏 | 返回启动器前清除 `WISH_GAME` 等变量，并传 `--wish-launcher` |
+| 游戏子进程单实例锁 | 启动器已持有单实例锁，游戏子进程会被判定为第二实例 | 子进程带 `WISH_LAUNCHER_CHILD=1`，由 vendor 补丁跳过单实例锁 |
 
 ## 10. 文档地图
 

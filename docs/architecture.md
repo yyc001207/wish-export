@@ -15,14 +15,14 @@
 ## 2. 运行时拓扑
 
 ```text
-Electron 主进程
+启动器进程（常驻托盘）
 └─ bootstrap.js
-   ├─ WISH_GAME 为空 → 启动器窗口
-   │  ├─ LAUNCHER_STATUS
-   │  ├─ LAUNCH_GAME
-   │  ├─ OPEN_DATA_DIR
-   │  └─ QUIT_APP
-   └─ WISH_GAME=genshin|starrail
+   ├─ 启动器窗口 + Tray
+   ├─ LAUNCHER_STATUS
+   ├─ LAUNCH_GAME
+   ├─ OPEN_DATA_DIR
+   ├─ QUIT_APP
+   └─ spawn 游戏子进程（--wish-game=<id>, WISH_LAUNCHER_CHILD=1）
       └─ require dist/electron/games/<game>/main/main.js
          ├─ 创建窗口
          ├─ 加载 dist/electron/games/<game>/renderer/index.html
@@ -32,10 +32,10 @@ Electron 主进程
 
 关键点：
 
-- 一个进程只加载一个游戏。
-- 启动器与游戏不会同时存在于同一个进程。
-- 游戏切换通过 `app.relaunch()` 完成。
-- 关闭游戏窗口后，统一入口会重启回启动器，而不是直接退出整个程序。
+- 启动器进程常驻托盘，游戏作为独立子进程运行。
+- 一个游戏子进程只加载一个游戏模块。
+- 关闭游戏窗口后子进程退出，启动器重新显示并恢复入口。
+- 关闭启动器窗口只隐藏到托盘；托盘菜单“退出”才结束程序。
 - 游戏窗口的渲染器仍然使用上游原版 Vue 应用。
 
 ## 3. 上游文件职责
@@ -323,7 +323,7 @@ autoUpdate, fetchFullHistory, hideNovice
 
 ## 9. 统一层与 vendor 的接口
 
-统一层只通过 5 个环境变量与 vendor 交互：
+统一层只通过 6 个环境变量与 vendor 交互：
 
 | 变量 | 设置方 | 用途 |
 | --- | --- | --- |
@@ -331,6 +331,7 @@ autoUpdate, fetchFullHistory, hideNovice
 | `WISH_APP_ROOT` | `bootstrap.js` | 数据根目录（开发态是仓库根目录，打包后是安装目录），vendor 用它定位 `userData/` |
 | `WISH_RENDERER` | `bootstrap.js` | 当前游戏渲染器 `index.html` 的绝对路径 |
 | `WISH_UPDATE_DISABLED` | `bootstrap.js` | 固定为 `1`，禁用上游自更新 |
+| `WISH_LAUNCHER_CHILD` | 启动器 spawn 子进程时 | 固定为 `1`，让 game 主进程跳过单实例锁 |
 | `WISH_DEV_SERVER_URL` | 可选 | 单游戏热更新时加载 Vite dev server |
 
 除此之外，统一层不调用 vendor 的内部函数。

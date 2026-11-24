@@ -13,7 +13,7 @@
 选择 `git subtree` 而不是 `git submodule`：
 
 - 上游代码会真实存在于本仓库，可以直接打补丁；
-- `git subtree pull` 使用三方合并，本地的 4 类补丁（每个上游各 4 处）会自动保留；
+- `git subtree pull` 使用三方合并，本地的 5 类补丁（每个上游各 5 处）会自动保留；
 - 只有上游修改了补丁所在行时才会冲突，冲突面很小；
 - 不需要为每个补丁维护 fork 或 patch 队列。
 
@@ -46,7 +46,7 @@ git subtree add --prefix=vendor/starrail upstream-starrail main --squash
 导入完成后继续：
 
 ```powershell
-yarn patch-vendor   # 应用 4 类最小补丁（每个上游 4 处）
+yarn patch-vendor   # 应用 5 类最小补丁（每个上游 5 处）
 yarn setup          # 安装两个上游的构建依赖
 yarn test           # 契约测试
 yarn build:games    # 构建两个游戏
@@ -138,6 +138,7 @@ git subtree pull --prefix=vendor/starrail upstream-starrail main --squash -m "ch
 | `utils-app-root` | `src/main/utils.js` | `WISH_APP_ROOT` | `appRoot` 优先读数据根目录 |
 | `utils-user-data` | `src/main/utils.js` | `process.env.WISH_GAME` | `userDataPath` 追加游戏子目录 |
 | `main-renderer` | `src/main/main.js` | `WISH_RENDERER` | 渲染器入口由统一入口注入 |
+| `main-single-instance` | `src/main/main.js` | `WISH_LAUNCHER_CHILD` | 游戏子进程跳过单实例锁 |
 | `update-disabled` | `src/main/update/index.js` | `WISH_UPDATE_DISABLED` | 统一版禁用上游自更新 |
 
 补丁后的代码：
@@ -156,6 +157,11 @@ const rendererUrl = process.env.WISH_DEV_SERVER_URL
 const rendererFile = process.env.WISH_RENDERER || 'dist/electron/renderer/index.html'
 if (rendererUrl) win.loadURL(rendererUrl)
 else win.loadFile(rendererFile)
+```
+
+```js
+// [wish-export patch] 托盘启动器拉起的游戏子进程跳过单实例锁
+const isFirstInstance = process.env.WISH_LAUNCHER_CHILD === '1' || app.requestSingleInstanceLock()
 ```
 
 ```js
@@ -230,7 +236,7 @@ const update = async () => {
 
 ## 6. 同步后的检查清单
 
-- [ ] `git diff` 确认 `vendor/` 只包含上游改动与 4 类补丁（每个上游 4 处）。
+- [ ] `git diff` 确认 `vendor/` 只包含上游改动与 5 类补丁（每个上游 5 处）。
 - [ ] `yarn patch-vendor` 成功。
 - [ ] `yarn test` 全部通过。
 - [ ] `yarn build:games` 两个游戏构建成功。

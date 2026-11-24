@@ -69,7 +69,7 @@
 
 选择 A 的关键理由：
 
-- 上游代码保持原样，同步是三方合并，本地 4 类补丁（每个上游各 4 处）能自动保留。
+- 上游代码保持原样，同步是三方合并，本地 5 类补丁（每个上游各 5 处）能自动保留。
 - 产品层只有一个入口，满足“一个工具”的核心诉求。
 - 不需要先重构，能最快进入可用状态。
 - 后续如果要统一 UI，可以在 A 的基础上替换启动器与设置页，不影响同步机制。
@@ -78,14 +78,13 @@
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│ Electron 主进程（唯一）                                     │
+│ 启动器进程（常驻托盘）                                      │
 │ apps/desktop/src/main/bootstrap.js                          │
 │                                                            │
-│  WISH_GAME 未设置  → 启动器窗口（apps/desktop/src/launcher）│
-│  WISH_GAME=genshin → require vendor/genshin 构建产物        │
-│  WISH_GAME=starrail→ require vendor/starrail 构建产物       │
+│  ├─ 启动器窗口 + Tray                                       │
+│  └─ spawn 游戏子进程（--wish-game=<id>）                    │
 └───────────────────────────┬────────────────────────────────┘
-                            │ 只加载一个
+                            │ 同一时间只启动一个
               ┌─────────────┴─────────────┐
               ▼                           ▼
    dist/electron/games/genshin   dist/electron/games/starrail
@@ -116,22 +115,23 @@
 ### 6.1 启动流程
 
 1. 用户启动程序，Electron 加载 `package.json` 的 `main`：`apps/desktop/src/main/bootstrap.js`。
-2. `bootstrap.js` 读取 `process.env.WISH_GAME`。
-3. 未设置或值非法：进入启动器。
-4. 启动器读取 `LAUNCHER_STATUS`，显示两个游戏是否已构建。
+2. `bootstrap.js` 读取 `process.env.WISH_GAME` 与 `--wish-game` 参数。
+3. 未设置或值非法：进入启动器进程，创建启动器窗口与托盘。
+4. 启动器读取 `LAUNCHER_STATUS`，显示两个游戏是否已构建、是否有游戏正在运行。
 5. 用户点击某个游戏：
-   - 校验构建产物存在；
-   - `app.relaunch({ args: [...process.argv.slice(1), '--wish-game=<id>'] })`；
-   - `app.exit(0)`。
-6. 新进程带 `--wish-game` 启动，`bootstrap.js` 解析参数并注入：
+   - 校验构建产物存在，且当前没有游戏在运行；
+   - `spawn(process.execPath, ['--wish-game=<id>'], { env: { WISH_LAUNCHER_CHILD: '1' } })`；
+   - 启动器窗口隐藏到托盘，两个入口变灰不可点击。
+6. 游戏子进程启动，`bootstrap.js` 注入：
    - `WISH_APP_ROOT`：数据根目录（打包后是安装目录）；
    - `WISH_RENDERER`：当前游戏的 `renderer/index.html` 绝对路径；
    - `WISH_UPDATE_DISABLED=1`：禁用上游自更新；
    - 然后 `require` 对应游戏的 `main/main.js`。
 7. 游戏的 `main.js` 创建自己的窗口、注册自己的 IPC、加载自己的渲染器。
-8. 关闭游戏窗口时，`bootstrap.js` 拦截一次 `before-quit`，清除 `WISH_GAME` 等环境变量，并用带 `--wish-launcher` 的参数重启回到启动器；第二次 `quit` 正常执行，保留上游的代理清理逻辑。
+8. 关闭游戏窗口时，游戏子进程退出；启动器收到 `exit` 事件后重新显示窗口，入口恢复可点击。
+9. 关闭启动器窗口时收起到托盘；托盘菜单“退出”会结束游戏子进程并退出整个程序。
 
-### 6.2 为什么用重启切换，而不是进程内切换
+### 6.2 为什么用独立子进程，而不是同进程加载两个游戏
 
 两个上游都在模块加载阶段注册 IPC：
 
@@ -142,14 +142,14 @@
 
 `ipcMain.handle` 对同一通道只能注册一次，第二次注册会抛错。即使手动 `removeHandler`，两个游戏的模块状态、定时器、代理状态也很难彻底清理。
 
-因此采用最可靠的做法：**切换游戏 = 重启进程**。代价是 1–2 秒重启时间，换来零 IPC 冲突与零残留状态。
+因此采用：**启动器进程常驻托盘，游戏作为独立子进程运行**。这样既避免 IPC 冲突，又不需要关闭启动器，还能在游戏退出后自动恢复入口。
 
 ### 6.3 单实例
 
-- 启动器模式获取单实例锁；已有实例时聚焦已有窗口。
-- 游戏模式由上游 `main.js` 自己获取单实例锁。
-- 游戏运行期间再次双击程序，会被游戏实例接管并聚焦，不会弹出启动器。
-- 切换游戏前需要先关闭当前游戏；这是当前已知限制，后续可通过托盘或切换菜单优化。
+- 启动器进程获取单实例锁；已有实例时聚焦启动器。
+- 游戏子进程带 `WISH_LAUNCHER_CHILD=1`，通过 vendor 补丁跳过单实例锁，避免被启动器持有的锁判定为第二实例。
+- 启动器只记录一个 `gameProcess`，游戏运行期间入口不可点击，保证同一时间只运行一个游戏。
+- 游戏运行期间再次双击程序，会聚焦启动器窗口。
 
 ## 7. 数据目录设计
 
@@ -217,13 +217,14 @@ const userDataPath = path.resolve(appRoot, 'userData', process.env.WISH_GAME || 
 
 ## 8. vendor 补丁边界
 
-补丁只允许 4 类，每个上游各 4 处，全部由脚本生成并带标记：
+补丁只允许 5 类，每个上游各 5 处，全部由脚本生成并带标记：
 
 | 文件 | 标记 | 目的 |
 | --- | --- | --- |
 | `src/main/utils.js` | `WISH_APP_ROOT` | 让统一入口注入数据根目录 |
 | `src/main/utils.js` | `process.env.WISH_GAME` | 每个游戏独立数据目录 |
 | `src/main/main.js` | `WISH_RENDERER` | 加载统一入口指定的渲染器入口 |
+| `src/main/main.js` | `WISH_LAUNCHER_CHILD` | 游戏子进程跳过单实例锁 |
 | `src/main/update/index.js` | `WISH_UPDATE_DISABLED` | 禁用上游自更新 |
 
 补丁后的 `main.js` 渲染器加载逻辑：
@@ -234,6 +235,13 @@ const rendererUrl = process.env.WISH_DEV_SERVER_URL
 const rendererFile = process.env.WISH_RENDERER || 'dist/electron/renderer/index.html'
 if (rendererUrl) win.loadURL(rendererUrl)
 else win.loadFile(rendererFile)
+```
+
+补丁后的单实例逻辑：
+
+```js
+// [wish-export patch] 托盘启动器拉起的游戏子进程跳过单实例锁
+const isFirstInstance = process.env.WISH_LAUNCHER_CHILD === '1' || app.requestSingleInstanceLock()
 ```
 
 补丁后的更新逻辑：
@@ -303,7 +311,7 @@ release/
 
 - Electron 运行时只打包一份。
 - 两个渲染器各自带 Vue、element-plus、echarts，体积增加主要来自重复的 UI 依赖。
-- 本地实测：exe 59.5 MB，zip 80.4 MB；构建 248.5s，打包 33.2s（Windows x64，Node 20）。
+- 本地实测：exe 59.5 MB，zip 80.5 MB；构建 248.5s，打包 33.2s（Windows x64，Node 20）。
 - 如果后续体积不可接受，再考虑将共享依赖外置（当前不做）。
 
 ## 10. 上游同步
@@ -321,7 +329,7 @@ release/
 yarn sync-upstream
   ├─ git subtree pull vendor/genshin  ← biuuu/genshin-wish-export main
   ├─ git subtree pull vendor/starrail ← biuuu/star-rail-warp-export main
-  ├─ yarn patch-vendor                # 幂等校验 4 类补丁
+  ├─ yarn patch-vendor                # 幂等校验 5 类补丁
   └─ yarn test                        # 契约测试
 ```
 
@@ -338,7 +346,7 @@ yarn sync-upstream
 1. 两个游戏的 IPC 通道快照（16 / 15 个）。
 2. `gachaType.json` 的卡池类型键集合。
 3. 星铁 `idJson.json` 的语言数量、条目数量、字段结构。
-4. 4 类 vendor 补丁标记是否仍然存在。
+4. 5 类 vendor 补丁标记是否仍然存在。
 5. 两个游戏是否能完成构建（M2 加入 CI）。
 
 ## 11. 更新策略
@@ -387,7 +395,7 @@ yarn sync-upstream
 ### M1 上游导入与补丁（已完成）
 
 - [x] `yarn import-upstream` 导入两个上游（原神 `c4675ab`、星铁 `8a0b664`）。
-- [x] `yarn patch-vendor` 应用 4 类补丁（每个上游 4 处）。
+- [x] `yarn patch-vendor` 应用 5 类补丁（每个上游 5 处）。
 - [x] `yarn setup` 安装依赖。
 - [x] `yarn test` 通过（9/9）。
 
@@ -399,7 +407,7 @@ yarn sync-upstream
 - [ ] `yarn dev` 显示两个游戏“已就绪”（本地沙箱无法启动 Electron GUI，待真实桌面验证）。
 - [ ] 分别点击进入原神/星铁，界面正常加载（同上）。
 - [ ] 数据写入 `userData/<game>/`（同上）。
-- [x] 记录安装包体积与构建耗时：exe 59.5 MB，zip 80.4 MB；构建 248.5s，打包 33.2s。
+- [x] 记录安装包体积与构建耗时：exe 59.5 MB，zip 80.5 MB；构建 248.5s，打包 33.2s。
 
 ### M3 数据迁移与打包
 
@@ -430,12 +438,12 @@ yarn sync-upstream
 - 理由：subtree pull 是三方合并，本地补丁可保留；submodule 无法直接修改上游代码。
 - 代价：仓库体积略大；补丁冲突需要人工处理。
 
-### ADR-002：切换游戏使用进程重启
+### ADR-002：托盘常驻 + 独立游戏子进程
 
-- 背景：两个上游的 IPC 通道大量重名。
-- 决策：`app.relaunch()` + `--wish-game=<id>` 启动参数，bootstrap 再写入 `WISH_GAME` 环境变量。
-- 理由：可靠、无残留状态、实现简单。
-- 代价：切换有 1–2 秒重启时间。
+- 背景：两个上游的 IPC 通道大量重名，且用户需要在关闭游戏后继续使用启动器。
+- 决策：启动器进程常驻托盘，点击游戏时 `spawn` 一个带 `--wish-game=<id>` 的子进程；子进程带 `WISH_LAUNCHER_CHILD=1` 跳过单实例锁。
+- 理由：避免 IPC 冲突，启动器无需退出，关闭游戏后可自动恢复入口。
+- 代价：游戏运行时多一个 Electron 子进程；需要新增单实例 vendor 补丁。
 
 ### ADR-003：保留两套构建与依赖
 

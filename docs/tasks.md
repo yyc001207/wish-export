@@ -25,9 +25,12 @@ yarn dev
 或安装 `release/Wish-Export-0.1.0-x64.exe`，验证：
 
 - 启动器显示两个游戏“已就绪”；
-- 两个游戏都能进入原版界面；
-- 数据分别写入 `userData/genshin/`、`userData/starrail/`；
-- 关闭后可切换另一个游戏。
+- 点击游戏后启动器隐藏到托盘，入口变灰不可点击；
+- 托盘图标可以重新打开启动器；
+- 关闭游戏窗口后自动回到启动器，入口恢复可点击；
+- 关闭启动器窗口只是收起到托盘；
+- 托盘菜单“退出”结束程序；
+- 数据分别写入 `userData/genshin/`、`userData/starrail/`。
 
 ## M0：文档与骨架（DONE）
 
@@ -48,7 +51,7 @@ yarn dev
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
 | T1.1 | 导入两个上游 | DONE | `vendor/genshin`（c4675ab）、`vendor/starrail`（8a0b664）已存在；两条 subtree 提交已生成 |
-| T1.2 | 应用 vendor 补丁 | DONE | 首次应用 8 处（每个上游 4 处），4 类标记齐全；已提交 `93754f0` |
+| T1.2 | 应用 vendor 补丁 | DONE | 共 10 处（每个上游 5 处），5 类标记齐全；已提交 `93754f0` 与后续单实例补丁 |
 | T1.3 | 安装两个上游构建依赖 | DONE | `yarn setup` 成功；两个 vendor 均有 `node_modules/vite` |
 | T1.4 | 契约测试转绿 | DONE | `yarn test` 9/9 通过，不再跳过 |
 | T1.5 | 校验上游默认分支 | DONE | 两个上游 `main` 均已通过 `git ls-remote` 验证并使用 |
@@ -85,8 +88,8 @@ yarn test
 | T2.4 | 星铁入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
 | T2.5 | 数据隔离验证 | BLOCKED | 同上，需真实运行后确认 `userData/<game>/` |
 | T2.6 | 切换与单实例验证 | BLOCKED | 同上，需真实桌面验证切换与单实例 |
-| T2.7 | 记录体积与耗时 | DONE | 构建 248.5s，打包 33.2s；exe 59.5 MB，zip 80.4 MB |
-| T2.8 | 关闭游戏窗口返回启动器 | BLOCKED | 已实现并打入 exe；已修复环境变量继承导致的重复进入原游戏问题，待桌面验证 |
+| T2.7 | 记录体积与耗时 | DONE | 构建 248.5s，打包 33.2s；exe 59.5 MB，zip 80.5 MB |
+| T2.8 | 托盘常驻与游戏子进程 | BLOCKED | 已实现：启动器常驻托盘、游戏子进程、入口禁用/恢复；待真实桌面验证 |
 
 验收时重点观察：
 

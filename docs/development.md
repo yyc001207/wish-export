@@ -25,7 +25,7 @@ yarn install
 # 2. 导入两个上游到 vendor/（会创建 git 提交）
 yarn import-upstream
 
-# 3. 应用 vendor 补丁（4 类，每个上游 4 处）
+# 3. 应用 vendor 补丁（5 类，每个上游 5 处）
 yarn patch-vendor
 
 # 4. 安装两个上游的构建依赖（跳过 Electron 二进制）
@@ -47,7 +47,7 @@ yarn dev
 | --- | --- | --- |
 | `yarn install` | 根 `node_modules` | 检查网络与 npm registry |
 | `import-upstream` | `vendor/genshin`、`vendor/starrail` | 检查工作区是否干净、GitHub 是否可访问 |
-| `patch-vendor` | 4 类带标记的补丁（每个上游 4 处） | 按 [upstream-sync.md](upstream-sync.md) 5.3 处理 |
+| `patch-vendor` | 5 类带标记的补丁（每个上游 5 处） | 按 [upstream-sync.md](upstream-sync.md) 5.3 处理 |
 | `setup` | 两个 vendor 的 `node_modules` | 检查 Yarn 与网络；可单独在 vendor 目录执行 |
 | `test` | 契约测试结果 | 见 [upstream-sync.md](upstream-sync.md) 5.4 |
 | `build:games` | `dist/electron/games/` | 查看具体游戏的构建日志 |
