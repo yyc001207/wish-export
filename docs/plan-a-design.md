@@ -302,7 +302,8 @@ release/
 
 - Electron 运行时只打包一份。
 - 两个渲染器各自带 Vue、element-plus、echarts，体积增加主要来自重复的 UI 依赖。
-- 具体增量在 M2 构建完成后记录；如果不可接受，再考虑将共享依赖外置（当前不做）。
+- 本地实测：exe 59.5 MB，zip 80.4 MB；构建 248.5s，打包 33.2s（Windows x64，Node 20）。
+- 如果后续体积不可接受，再考虑将共享依赖外置（当前不做）。
 
 ## 10. 上游同步
 
@@ -382,29 +383,29 @@ yarn sync-upstream
 
 验收：`yarn test` 在未导入 vendor 时全部跳过且退出码为 0。
 
-### M1 上游导入与补丁（进行中）
+### M1 上游导入与补丁（已完成）
 
 - [x] `yarn import-upstream` 导入两个上游（原神 `c4675ab`、星铁 `8a0b664`）。
-- [ ] `yarn patch-vendor` 应用 4 类补丁（每个上游 4 处）。
-- [ ] `yarn setup` 安装依赖。
-- [ ] `yarn test` 通过。
+- [x] `yarn patch-vendor` 应用 4 类补丁（每个上游 4 处）。
+- [x] `yarn setup` 安装依赖。
+- [x] `yarn test` 通过（9/9）。
 
 验收：契约测试不再跳过，IPC 快照、卡池类型、补丁标记全部通过。
 
-### M2 构建与启动器联调
+### M2 构建与启动器联调（进行中）
 
-- [ ] `yarn build:games` 两个游戏构建成功。
-- [ ] `yarn dev` 显示两个游戏“已就绪”。
-- [ ] 分别点击进入原神/星铁，界面正常加载。
-- [ ] 数据写入 `userData/<game>/`。
-- [ ] 记录安装包体积与构建耗时。
+- [x] `yarn build:games` 两个游戏构建成功。
+- [ ] `yarn dev` 显示两个游戏“已就绪”（本地沙箱无法启动 Electron GUI，待真实桌面验证）。
+- [ ] 分别点击进入原神/星铁，界面正常加载（同上）。
+- [ ] 数据写入 `userData/<game>/`（同上）。
+- [x] 记录安装包体积与构建耗时：exe 59.5 MB，zip 80.4 MB；构建 248.5s，打包 33.2s。
 
 ### M3 数据迁移与打包
 
 - [ ] 旧版 `userData` 导入。
-- [ ] Windows exe 安装包与 zip 打包验证。
+- [x] Windows exe 安装包与 zip 打包验证。
 - [ ] 首次启动、升级、卸载路径验证。
-- [ ] GitHub Release 自动发布验证。
+- [ ] GitHub Release 自动发布验证（工作流已配置，尚未在远端发版）。
 - [ ] README 用户文档。
 
 ### M4 统一更新器

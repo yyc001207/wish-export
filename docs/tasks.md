@@ -14,20 +14,20 @@
 
 ## 当前下一步
 
-**T1.2：应用 vendor 补丁。**
+**T2.2：在真实桌面验证启动器。**
 
-T1.1 已完成：
-
-- `vendor/genshin`：上游提交 `c4675ab`
-- `vendor/starrail`：上游提交 `8a0b664`
-
-执行：
+本地执行沙箱无法启动 Electron GUI，但构建、契约测试与 exe/zip 打包均已通过。请在真实 Windows 桌面执行：
 
 ```powershell
-yarn patch-vendor
-yarn setup
-yarn test
+yarn dev
 ```
+
+或安装 `release/Wish-Export-0.1.0-x64.exe`，验证：
+
+- 启动器显示两个游戏“已就绪”；
+- 两个游戏都能进入原版界面；
+- 数据分别写入 `userData/genshin/`、`userData/starrail/`；
+- 关闭后可切换另一个游戏。
 
 ## M0：文档与骨架（DONE）
 
@@ -48,12 +48,12 @@ yarn test
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
 | T1.1 | 导入两个上游 | DONE | `vendor/genshin`（c4675ab）、`vendor/starrail`（8a0b664）已存在；两条 subtree 提交已生成 |
-| T1.2 | 应用 vendor 补丁 | TODO | `yarn patch-vendor` 首次输出应用 8 处（每个上游 4 处）；源码含 4 类标记 |
-| T1.3 | 安装两个上游构建依赖 | TODO | `yarn setup` 成功；两个 vendor 都有 `node_modules/vite` |
-| T1.4 | 契约测试转绿 | TODO | `yarn test` 不再跳过；IPC 快照、gachaType、idJson、补丁标记全部通过 |
+| T1.2 | 应用 vendor 补丁 | DONE | 首次应用 8 处（每个上游 4 处），4 类标记齐全；已提交 `93754f0` |
+| T1.3 | 安装两个上游构建依赖 | DONE | `yarn setup` 成功；两个 vendor 均有 `node_modules/vite` |
+| T1.4 | 契约测试转绿 | DONE | `yarn test` 9/9 通过，不再跳过 |
 | T1.5 | 校验上游默认分支 | DONE | 两个上游 `main` 均已通过 `git ls-remote` 验证并使用 |
 
-执行顺序：T1.2 → T1.3 → T1.4（T1.1、T1.5 已完成）。
+执行顺序：M1 已完成；M2 从 T2.2 开始。
 
 T1.1 命令：
 
@@ -79,13 +79,13 @@ yarn test
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T2.1 | 构建两个游戏 | TODO | `yarn build:games` 成功；四个关键产物存在 |
-| T2.2 | 启动器联调 | TODO | `yarn dev` 打开启动器；两个游戏显示“已就绪” |
-| T2.3 | 原神入口验证 | TODO | 点击原神进入原版界面；加载数据、导出 Excel、导出 UIGF 正常 |
-| T2.4 | 星铁入口验证 | TODO | 点击星铁进入原版界面；加载数据、导出 Excel、导出 UIGF 正常 |
-| T2.5 | 数据隔离验证 | TODO | 两个游戏分别写入 `userData/genshin/`、`userData/starrail/`；互不覆盖 |
-| T2.6 | 切换与单实例验证 | TODO | 关闭游戏后可切换另一个；游戏运行时再次启动会聚焦当前窗口 |
-| T2.7 | 记录体积与耗时 | TODO | 在 `docs/plan-a-design.md` 或本文件记录安装包体积、构建耗时 |
+| T2.1 | 构建两个游戏 | DONE | `yarn build:games` 成功；main 与 renderer 产物齐全 |
+| T2.2 | 启动器联调 | BLOCKED | 本地沙箱无法启动 Electron GUI；需在真实桌面运行 `yarn dev` 验证 |
+| T2.3 | 原神入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
+| T2.4 | 星铁入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
+| T2.5 | 数据隔离验证 | BLOCKED | 同上，需真实运行后确认 `userData/<game>/` |
+| T2.6 | 切换与单实例验证 | BLOCKED | 同上，需真实桌面验证切换与单实例 |
+| T2.7 | 记录体积与耗时 | DONE | 构建 248.5s，打包 33.2s；exe 59.5 MB，zip 80.4 MB |
 
 验收时重点观察：
 
@@ -107,8 +107,8 @@ yarn test
 | --- | --- | --- | --- |
 | T3.1 | 旧版数据导入 | TODO | 首次启动可识别旧 `userData/`；导入后数据出现在 `userData/<game>/`；旧文件保留 |
 | T3.2 | 旧数据导入 UI | TODO | 启动器提供“导入旧数据”入口；可选择旧安装目录 |
-| T3.3 | Windows 打包 | TODO | `yarn package` 产出 exe 安装包与 zip；安装/解压后启动器可用 |
-| T3.4 | 打包后路径验证 | TODO | 打包后 `app.getAppPath()`、`WISH_RENDERER`、`userData` 路径正确 |
+| T3.3 | Windows 打包 | DONE | 已产出 `Wish-Export-0.1.0-x64.exe`（59.5 MB）与 `.zip`（80.4 MB） |
+| T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个游戏的 main/renderer 均存在 |
 | T3.5 | 用户文档 | TODO | 根 README 说明安装、使用、数据位置、从旧版迁移 |
 | T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
 | T3.7 | GitHub Releases 自动发布 | DONE | `.github/workflows/release.yml`：推送 `v*` 标签自动上传 exe/zip/SHA256；尚未在远端实际发版 |
