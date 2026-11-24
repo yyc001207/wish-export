@@ -34,8 +34,8 @@
 - 两个上游构建依赖已安装，两个分析工具的 main 与 renderer 构建成功。
 - 启动器与两个分析工具界面已在真实桌面验证通过（2026-11-24）：启动器里两个分析工具都可选择，分别可打开、导出正常，数据按分析工具隔离落在 AppData。
 - 应用图标已覆盖 Windows 窗口、托盘、exe 与 NSIS 安装包。
-- Windows exe 与 zip 由 GitHub Actions 构建产出（v0.1.1：exe 59.8 MB，zip 80.5 MB）；本地不保留 `release/` 产物。
-- v0.1.0、v0.1.1 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
+- Windows exe 与 zip 由 GitHub Actions 构建产出（v0.2.0：exe 59.8 MB / 62,696,935 B，zip 80.5 MB / 84,448,614 B）；本地不保留 `release/` 产物。
+- v0.1.0、v0.1.1、v0.2.0 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
 
 未完成（不要假装已存在）：
 
