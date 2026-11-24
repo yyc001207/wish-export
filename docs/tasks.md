@@ -14,23 +14,11 @@
 
 ## 当前下一步
 
-**T2.2：在真实桌面验证启动器。**
+**T3.2：原版独立程序数据导入 UI。**
 
-本地执行沙箱无法启动 Electron GUI，但构建、契约测试与 exe/zip 打包均已通过。请在真实 Windows 桌面执行：
+M2 构建与启动器联调已于 2026-11-24 在真实桌面验证通过：启动器可打开并显示两个游戏“已就绪”，两个游戏分别可进入，导出正常；数据分别写入 `app.getPath('userData')/userData/genshin/` 与 `.../starrail/`，未出现 IPC 重复注册错误。
 
-```powershell
-yarn dev
-```
-
-或安装 `release/Wish-Export-0.1.0-x64.exe`，验证：
-
-- 启动器显示两个游戏“已就绪”；
-- 点击游戏后启动器隐藏到托盘，入口变灰不可点击；
-- 托盘图标可以重新打开启动器；
-- 关闭游戏窗口后自动回到启动器，入口恢复可点击；
-- 关闭启动器窗口只是收起到托盘；
-- 托盘菜单“退出”结束程序；
-- 数据分别写入 `app.getPath('userData')/userData/genshin/`、`.../starrail/`。
+当前发布版为 v0.1.1（`Wish-Export-0.1.1-x64.exe` / `.zip`，GitHub Actions 构建）。下一步实现原版独立程序的数据导入入口，要点见 T3.2 实现提示。
 
 ## M0：文档与骨架（DONE）
 
@@ -42,7 +30,7 @@ yarn dev
 | T0.4 | 统一入口 bootstrap | DONE | `apps/desktop/src/main/bootstrap.js` |
 | T0.5 | 启动器页面 | DONE | `apps/desktop/src/launcher/` |
 | T0.6 | 导入 / 同步 / 补丁 / 构建脚本 | DONE | `scripts/` |
-| T0.7 | 契约测试与 CI | DONE | `tests/contracts/`、`.github/workflows/`；CI 尚未在远端实际运行 |
+| T0.7 | 契约测试与 CI | DONE | `tests/contracts/`、`.github/workflows/`；CI 已在 v0.1.0、v0.1.1 实际运行并产出产物 |
 | T0.8 | 本地验证 | DONE | `node --check` 全部通过；`yarn test` 9 项全部按预期跳过，退出码 0 |
 | T0.9 | 版本迭代规则 | DONE | `docs/versioning.md`；AGENTS、README、开发与同步文档已建立引用 |
 
@@ -56,7 +44,7 @@ yarn dev
 | T1.4 | 契约测试转绿 | DONE | `yarn test` 9/9 通过，不再跳过 |
 | T1.5 | 校验上游默认分支 | DONE | 两个上游 `main` 均已通过 `git ls-remote` 验证并使用 |
 
-执行顺序：M1 已完成；M2 从 T2.2 开始。
+执行顺序：M1、M2 已完成；下一步 T3.2。
 
 T1.1 命令：
 
@@ -83,13 +71,13 @@ yarn test
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
 | T2.1 | 构建两个游戏 | DONE | `yarn build:games` 成功；main 与 renderer 产物齐全 |
-| T2.2 | 启动器联调 | BLOCKED | 本地沙箱无法启动 Electron GUI；需在真实桌面运行 `yarn dev` 验证 |
-| T2.3 | 原神入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
-| T2.4 | 星铁入口验证 | BLOCKED | 同上，需真实桌面点击验证加载、Excel、UIGF |
-| T2.5 | 数据隔离验证 | BLOCKED | 同上，需真实运行后确认 `app.getPath('userData')/userData/<game>/` |
-| T2.6 | 切换与单实例验证 | BLOCKED | 同上，需真实桌面验证切换与单实例 |
-| T2.7 | 记录体积与耗时 | DONE | 构建 248.5s，打包 33.2s；exe 59.5 MB，zip 80.5 MB |
-| T2.8 | 托盘常驻与游戏子进程 | BLOCKED | 已实现：启动器常驻托盘、游戏子进程、入口禁用/恢复；待真实桌面验证 |
+| T2.2 | 启动器联调 | DONE | 2026-11-24 真实桌面验证：启动器显示两个游戏“已就绪”，点击后隐藏到托盘、入口变灰，关闭游戏后自动回到启动器 |
+| T2.3 | 原神入口验证 | DONE | 真实桌面验证：入口加载正常，导出正常 |
+| T2.4 | 星铁入口验证 | DONE | 真实桌面验证：入口加载正常，导出正常 |
+| T2.5 | 数据隔离验证 | DONE | 真实运行确认数据分别写入 `%APPDATA%\hoyo-gacha-export\userData\genshin\`、`...\starrail\` |
+| T2.6 | 切换与单实例验证 | DONE | 真机验证：运行中入口禁用，关闭后可切到另一游戏；未出现 IPC 重复注册错误 |
+| T2.7 | 记录体积与耗时 | DONE | v0.1.1（Actions）exe 59.8 MB（62,693,202 B）、zip 80.5 MB（84,444,599 B）；本地构建 248.5s、打包 33.2s（v0.1.0 记录） |
+| T2.8 | 托盘常驻与游戏子进程 | DONE | 真机验证：启动器常驻托盘、游戏子进程独立、入口禁用/恢复均正常 |
 
 验收时重点观察：
 
@@ -111,11 +99,11 @@ yarn test
 | --- | --- | --- | --- |
 | T3.1 | 统一版旧安装目录数据迁移 | DONE | 启动时复制 `<旧安装目录>/userData/<game>` 到 `app.getPath('userData')/userData/<game>`；只补齐缺失文件、不覆盖、不删除；有单测 |
 | T3.2 | 原版独立程序数据导入 UI | TODO | 启动器提供“导入旧数据”入口；可选择旧安装目录与游戏归属 |
-| T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.1.0-x64.exe`（59.5 MB）与 `.zip`（80.5 MB）；v0.1.0 已发布 |
+| T3.3 | Windows 打包 | DONE | GitHub Actions 产出 `Wish-Export-0.1.1-x64.exe`（59.8 MB）与 `.zip`（80.5 MB）；v0.1.0、v0.1.1 已发布 |
 | T3.4 | 打包后路径验证 | DONE | `win-unpacked/resources/app` 中 bootstrap、两个游戏的 main/renderer 均存在 |
 | T3.5 | 用户文档 | TODO | 根 README 说明安装、使用、数据位置、从旧版迁移 |
 | T3.6 | 许可证与署名 | TODO | 保留两个上游 MIT LICENSE，README 注明来源 |
-| T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0 实际运行成功，exe/zip/SHA256 已上传 |
+| T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0、v0.1.1 实际运行成功，exe/zip/SHA256 已上传 |
 
 ### T3.1 实现提示
 
@@ -199,7 +187,7 @@ yarn test
 | 旧版数据迁移策略 | 需要产品确认 | 自动扫描还是手动选择目录 |
 | 统一版 `appId` 与发布渠道 | 需要产品确认 | 影响旧用户升级感知 |
 | macOS/Linux 支持 | 需要环境 | 当前只在 Windows 验证 |
-| 安装包体积是否可接受 | 需要实测 | M2 完成后记录 |
+| 安装包体积是否可接受 | 需要产品确认 | 已实测 v0.1.1：exe 59.8 MB、zip 80.5 MB |
 
 ## 更新规则
 

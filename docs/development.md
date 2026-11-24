@@ -253,8 +253,8 @@ yarn dev
 
 ```text
 release/
-├─ Wish-Export-0.1.0-x64.exe   # NSIS 安装包
-└─ Wish-Export-0.1.0-x64.zip   # 便携包
+├─ Wish-Export-<version>-x64.exe   # NSIS 安装包
+└─ Wish-Export-<version>-x64.zip   # 便携包
 ```
 
 当前配置：

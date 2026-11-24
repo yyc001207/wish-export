@@ -32,14 +32,13 @@
 - 旧的两个上游克隆已删除；`vendor/` 是唯一代码来源。
 - vendor 补丁已应用（10 处），契约测试 9/9 通过。
 - 两个上游构建依赖已安装，两个游戏的 main 与 renderer 构建成功。
-- Windows exe 与 zip 已在本地产出（exe 59.5 MB，zip 80.5 MB）。
+- 启动器与两个游戏界面已在真实桌面验证通过（2026-11-24）：启动器可选游戏，两游戏分别可打开、导出正常，数据按游戏隔离落在 AppData。
 - 应用图标已覆盖 Windows 窗口、托盘、exe 与 NSIS 安装包。
-- v0.1.0 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
+- Windows exe 与 zip 由 GitHub Actions 构建产出（v0.1.1：exe 59.8 MB，zip 80.5 MB）；本地不保留 `release/` 产物。
+- v0.1.0、v0.1.1 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
 
 未完成（不要假装已存在）：
 
-- 启动器与两个游戏界面尚未在真实桌面点击验证（当前执行沙箱无法启动 Electron 窗口）。
-- 启动器常驻托盘、关闭游戏后自动回到启动器已实现并打入 exe，待真实桌面验证。
 - 统一更新器未实现；当前通过补丁禁用上游自更新。
 - 统一版旧安装目录的数据会在启动时自动迁移到 AppData；原版独立程序的数据仍需手动导入。
 - 单窗口统一 UI 未实现，也不在当前范围。

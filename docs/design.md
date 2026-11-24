@@ -291,8 +291,8 @@ yarn build:games
 
 ```text
 release/
-├─ Wish-Export-0.1.0-x64.exe      # NSIS 安装包
-└─ Wish-Export-0.1.0-x64.zip      # 便携包
+├─ Wish-Export-<version>-x64.exe   # NSIS 安装包
+└─ Wish-Export-<version>-x64.zip   # 便携包
    └─ Wish Export/
       ├─ Wish Export.exe
       ├─ resources/app/
@@ -320,7 +320,7 @@ release/
 
 - Electron 运行时只打包一份。
 - 两个渲染器各自带 Vue、element-plus、echarts，体积增加主要来自重复的 UI 依赖。
-- 本地实测：exe 59.5 MB，zip 80.5 MB；构建 248.5s，打包 33.2s（Windows x64，Node 20）。
+- v0.1.1 发布版实测（GitHub Actions 构建）：exe 59.8 MB（62,693,202 B），zip 80.5 MB（84,444,599 B）；本地 v0.1.0 构建 248.5s、打包 33.2s（Windows x64，Node 20）。
 - 如果后续体积不可接受，再考虑将共享依赖外置（当前不做）。
 
 ## 10. 上游同步
@@ -410,14 +410,14 @@ yarn sync-upstream
 
 验收：契约测试不再跳过，IPC 快照、卡池类型、补丁标记全部通过。
 
-### M2 构建与启动器联调（进行中）
+### M2 构建与启动器联调（已完成）
 
 - [x] `yarn build:games` 两个游戏构建成功。
-- [ ] `yarn dev` 显示两个游戏“已就绪”（本地沙箱无法启动 Electron GUI，待真实桌面验证）。
-- [ ] 分别点击进入原神/星铁，界面正常加载（同上）。
-- [ ] 数据写入 `app.getPath('userData')/userData/<game>/`（同上）。
+- [x] `yarn dev` 显示两个游戏“已就绪”（2026-11-24 真实桌面验证）。
+- [x] 分别点击进入原神/星铁，界面正常加载（真实桌面验证）。
+- [x] 数据写入 `app.getPath('userData')/userData/<game>/`（真实运行后两个游戏目录均有数据）。
 - [x] 统一定位数据到 AppData，并在启动时迁移旧安装目录数据。
-- [x] 记录安装包体积与构建耗时：exe 59.5 MB，zip 80.5 MB；构建 248.5s，打包 33.2s。
+- [x] 记录安装包体积与构建耗时：v0.1.1 exe 59.8 MB、zip 80.5 MB；本地构建 248.5s、打包 33.2s。
 
 ### M3 数据迁移与打包
 
@@ -425,7 +425,7 @@ yarn sync-upstream
 - [ ] 原版独立程序 `userData` 的数据导入 UI。
 - [x] Windows exe 安装包与 zip 打包验证。
 - [ ] 首次启动、升级、卸载路径验证。
-- [ ] GitHub Release 自动发布验证（工作流已配置，尚未在远端发版）。
+- [x] GitHub Release 自动发布验证（`release.yml` 已发布 v0.1.0、v0.1.1）。
 - [ ] README 用户文档。
 
 ### M4 统一更新器
