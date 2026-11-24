@@ -23,7 +23,8 @@ function createWindow() {
   }
 }
 
-const isFirstInstance = app.requestSingleInstanceLock()
+// [wish-export patch] 托盘启动器拉起的游戏子进程跳过单实例锁
+const isFirstInstance = process.env.WISH_LAUNCHER_CHILD === '1' || app.requestSingleInstanceLock()
 
 if (!isFirstInstance) {
   app.quit()

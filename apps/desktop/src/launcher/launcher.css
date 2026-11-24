@@ -152,6 +152,11 @@ h1 {
   color: var(--accent);
 }
 
+.game-status.is-running {
+  background: rgba(217, 179, 108, 0.16);
+  color: #e3c07a;
+}
+
 .game-enter {
   margin-top: 6px;
   color: var(--accent);

@@ -4,7 +4,7 @@
  * 对 vendor/ 下的上游代码应用最小补丁。
  *
  * 设计原则：
- * 1. 只改 3 个文件、4 处代码，每处都带 [wish-export patch] 标记；
+ * 1. 只改 4 个文件、5 处代码，每处都带 [wish-export patch] 标记；
  * 2. 脚本可重复执行，已打过补丁的片段会跳过；
  * 3. 上游改动导致待替换片段消失时，脚本直接失败并指出文件，
  *    避免静默保留过期补丁。
@@ -48,6 +48,16 @@ const PATCHES = [
       "  const rendererFile = process.env.WISH_RENDERER || 'dist/electron/renderer/index.html'",
       '  if (rendererUrl) win.loadURL(rendererUrl)',
       '  else win.loadFile(rendererFile)'
+    ].join('\n')
+  },
+  {
+    id: 'main-single-instance',
+    file: 'src/main/main.js',
+    marker: 'WISH_LAUNCHER_CHILD',
+    target: 'const isFirstInstance = app.requestSingleInstanceLock()',
+    replacement: [
+      '// [wish-export patch] 托盘启动器拉起的游戏子进程跳过单实例锁',
+      "const isFirstInstance = process.env.WISH_LAUNCHER_CHILD === '1' || app.requestSingleInstanceLock()"
     ].join('\n')
   },
   {

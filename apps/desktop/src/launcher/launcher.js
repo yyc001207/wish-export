@@ -6,28 +6,49 @@ const version = document.querySelector('#version')
 const openDataButton = document.querySelector('#open-data')
 const quitButton = document.querySelector('#quit')
 
+window.launcher.onStatusChanged(status => {
+  renderStatus(status)
+})
+
 init()
 
 async function init () {
   try {
     const status = await window.launcher.getStatus()
-    version.textContent = `v${status.version}`
-    renderGames(status.games)
+    renderStatus(status)
   } catch (error) {
     showMessage(`读取启动信息失败：${error.message}`)
   }
 }
 
-function renderGames (games) {
+function renderStatus (status) {
+  version.textContent = `v${status.version}`
+
+  const runningGame = status.runningGame || ''
+  if (runningGame) {
+    const game = status.games.find(item => item.id === runningGame)
+    showMessage(`${game ? game.name : runningGame} 正在运行，关闭游戏窗口后会回到启动器`)
+  } else {
+    showMessage('')
+  }
+
+  renderGames(status.games, runningGame)
+}
+
+function renderGames (games, runningGame) {
   const fragment = document.createDocumentFragment()
+  const locked = Boolean(runningGame)
 
   for (const game of games) {
+    const isRunning = game.id === runningGame
+    const disabled = !game.built || locked
+
     const card = document.createElement('button')
     card.type = 'button'
     card.className = 'game-card'
     card.dataset.game = game.id
-    card.disabled = !game.built
-    card.setAttribute('aria-disabled', String(!game.built))
+    card.disabled = disabled
+    card.setAttribute('aria-disabled', String(disabled))
 
     const head = document.createElement('span')
     head.className = 'game-head'
@@ -43,12 +64,22 @@ function renderGames (games) {
     head.append(name, subtitle)
 
     const status = document.createElement('span')
-    status.className = game.built ? 'game-status is-ready' : 'game-status'
-    status.textContent = game.built ? '已就绪' : '未构建'
+    status.className = isRunning
+      ? 'game-status is-running'
+      : game.built
+        ? 'game-status is-ready'
+        : 'game-status'
+    status.textContent = isRunning ? '运行中' : game.built ? '已就绪' : '未构建'
 
     const enter = document.createElement('span')
     enter.className = 'game-enter'
-    enter.textContent = game.built ? '进入工具 →' : '请先运行 yarn build:games'
+    if (isRunning) {
+      enter.textContent = '运行中…'
+    } else if (locked) {
+      enter.textContent = '请先关闭当前游戏'
+    } else {
+      enter.textContent = game.built ? '进入工具 →' : '请先运行 yarn build:games'
+    }
 
     card.append(head, status, enter)
     card.addEventListener('click', () => launchGame(game, card))
@@ -66,15 +97,15 @@ function renderGames (games) {
 }
 
 async function launchGame (game, card) {
-  if (!game.built) return
+  if (card.disabled) return
 
   card.classList.add('is-loading')
   showMessage('')
 
   try {
     const result = await window.launcher.launch(game.id)
+    card.classList.remove('is-loading')
     if (result && !result.ok) {
-      card.classList.remove('is-loading')
       showMessage(result.message)
     }
   } catch (error) {

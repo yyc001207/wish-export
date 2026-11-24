@@ -1,6 +1,7 @@
 'use strict'
 
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell, Tray } = require('electron')
+const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
 
@@ -27,7 +28,6 @@ const GAMES_DIST = path.join(APP_DIR, 'dist', 'electron', 'games')
 const LAUNCHER_HTML = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'index.html')
 const LAUNCHER_PRELOAD = path.join(APP_DIR, 'apps', 'desktop', 'src', 'launcher', 'preload.js')
 const WISH_GAME_ARG = '--wish-game='
-const WISH_LAUNCHER_ARG = '--wish-launcher'
 const REQUESTED_GAME = getRequestedGame()
 
 app.setAppUserModelId('org.wish-export.unified')
@@ -39,9 +39,6 @@ if (GAMES[REQUESTED_GAME]) {
 }
 
 function getRequestedGame () {
-  // 显式要求回到启动器时，忽略可能残留的 WISH_GAME 环境变量和游戏参数
-  if (process.argv.includes(WISH_LAUNCHER_ARG)) return ''
-
   const arg = process.argv.find(item => item.startsWith(WISH_GAME_ARG))
   if (arg) return arg.slice(WISH_GAME_ARG.length)
   return process.env.WISH_GAME || ''
@@ -60,10 +57,9 @@ function isGameBuilt (id) {
 }
 
 /**
- * 启动单个游戏。
- * 这里必须只 require 一个游戏的主进程模块：
- * 两个上游都注册了同名 ipcMain.handle，同时加载会抛
- * "Attempted to register a second handler"。
+ * 游戏子进程入口。
+ * 只加载一个游戏的主进程模块：两个上游都注册了同名 ipcMain.handle，
+ * 同时加载会抛 "Attempted to register a second handler"。
  */
 function startGame (id) {
   const entry = getGameEntry(id)
@@ -85,49 +81,13 @@ function startGame (id) {
   // 统一版本禁止触发上游自更新，否则会用原版 zip 覆盖整个安装目录
   process.env.WISH_UPDATE_DISABLED = '1'
 
-  installReturnToLauncher()
   require(entry.main)
 }
 
 /**
- * 关闭游戏窗口后回到启动器，而不是直接退出整个程序。
- *
- * 上游 main.js 会在 window-all-closed 时调用 app.quit()。
- * 这里先注册同事件把状态记下来，再在 before-quit 中拦截一次，
- * 用不带 --wish-game 的参数重启，回到启动器。
- * 第二次 app.quit() 不再拦截，保证代理清理等 will-quit 逻辑正常执行。
+ * 启动器常驻托盘；游戏以独立子进程运行。
+ * 关闭游戏窗口时子进程退出，启动器重新显示并把入口恢复为可点击。
  */
-function installReturnToLauncher () {
-  let allWindowsClosed = false
-  let relaunching = false
-
-  app.on('window-all-closed', () => {
-    allWindowsClosed = true
-  })
-
-  app.on('before-quit', event => {
-    if (!allWindowsClosed || relaunching) return
-
-    relaunching = true
-    event.preventDefault()
-
-    // app.relaunch 会继承当前进程环境变量，必须清掉 WISH_GAME：
-    // 否则重启后的进程仍会被判定为原游戏，出现“关闭后一直重开原神”的循环。
-    delete process.env.WISH_GAME
-    delete process.env.WISH_APP_ROOT
-    delete process.env.WISH_RENDERER
-    delete process.env.WISH_UPDATE_DISABLED
-
-    const args = process.argv
-      .slice(1)
-      .filter(arg => !arg.startsWith(WISH_GAME_ARG) && arg !== WISH_LAUNCHER_ARG)
-      .concat([WISH_LAUNCHER_ARG])
-
-    app.relaunch({ args })
-    setImmediate(() => app.quit())
-  })
-}
-
 function startLauncher () {
   const gotLock = app.requestSingleInstanceLock()
   if (!gotLock) {
@@ -136,46 +96,66 @@ function startLauncher () {
   }
 
   let win = null
+  let tray = null
+  let trayReady = false
+  let gameProcess = null
+  let runningGame = ''
+  let isQuitting = false
 
-  ipcMain.handle('LAUNCHER_STATUS', () => ({
-    version: app.getVersion(),
-    appRoot: DATA_ROOT,
-    dataDir: path.join(DATA_ROOT, 'userData'),
-    games: GAME_IDS.map(id => ({
-      ...GAMES[id],
-      built: isGameBuilt(id)
-    }))
-  }))
-
-  ipcMain.handle('LAUNCH_GAME', (event, id) => {
-    if (!GAMES[id]) {
-      return { ok: false, message: '未知的游戏标识' }
-    }
-    if (!isGameBuilt(id)) {
-      return { ok: false, message: `${GAMES[id].name} 尚未构建，请先运行 yarn build:games` }
-    }
-    // 通过重启进程切换游戏，确保上一个游戏注册的 IPC 与模块状态被彻底清空。
-    // 同时清掉 --wish-launcher，避免从启动器进入游戏后又被判定为启动器模式。
-    const args = process.argv
-      .slice(1)
-      .filter(arg => !arg.startsWith(WISH_GAME_ARG) && arg !== WISH_LAUNCHER_ARG)
-      .concat([`${WISH_GAME_ARG}${id}`])
-    app.relaunch({ args })
-    app.exit(0)
-    return { ok: true }
-  })
-
+  ipcMain.handle('LAUNCHER_STATUS', () => getStatus())
+  ipcMain.handle('LAUNCH_GAME', (event, id) => launchGame(id))
   ipcMain.handle('OPEN_DATA_DIR', async () => {
     const dir = path.join(DATA_ROOT, 'userData')
     fs.mkdirSync(dir, { recursive: true })
     return shell.openPath(dir)
   })
+  ipcMain.handle('QUIT_APP', () => quitApp())
 
-  ipcMain.handle('QUIT_APP', () => {
-    app.quit()
+  app.whenReady().then(async () => {
+    await createTray()
+    createWindow()
   })
 
-  const createWindow = () => {
+  app.on('second-instance', () => showLauncher())
+  app.on('activate', () => showLauncher())
+  app.on('before-quit', () => {
+    isQuitting = true
+    stopGameProcess()
+  })
+  app.on('window-all-closed', () => {
+    // 有托盘时保持常驻；托盘创建失败或明确退出时才结束进程
+    if (isQuitting || !trayReady) app.quit()
+  })
+  app.on('quit', () => {
+    if (tray) {
+      tray.destroy()
+      tray = null
+    }
+  })
+
+  function getStatus () {
+    return {
+      version: app.getVersion(),
+      dataDir: path.join(DATA_ROOT, 'userData'),
+      runningGame,
+      games: GAME_IDS.map(id => ({
+        ...GAMES[id],
+        built: isGameBuilt(id)
+      }))
+    }
+  }
+
+  function sendStatus () {
+    if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return
+    win.webContents.send('LAUNCHER_STATUS_CHANGED', getStatus())
+  }
+
+  function createWindow () {
+    if (win && !win.isDestroyed()) {
+      showLauncher()
+      return
+    }
+
     win = new BrowserWindow({
       width: 780,
       height: 540,
@@ -193,26 +173,140 @@ function startLauncher () {
     })
 
     win.loadFile(LAUNCHER_HTML)
-    win.once('ready-to-show', () => win.show())
+    win.once('ready-to-show', () => {
+      if (!isQuitting) win.show()
+    })
+    win.on('close', event => {
+      // 点击窗口关闭按钮时收起到托盘，而不是退出整个程序
+      if (!isQuitting && trayReady) {
+        event.preventDefault()
+        win.hide()
+      }
+    })
     win.on('closed', () => {
       win = null
     })
   }
 
-  app.whenReady().then(createWindow)
+  async function createTray () {
+    try {
+      let icon = null
+      try {
+        icon = await app.getFileIcon(process.execPath, { size: 'small' })
+      } catch (error) {
+        icon = null
+      }
+      tray = new Tray(icon || process.execPath)
+      tray.setToolTip('Wish Export')
+      tray.on('click', () => showLauncher())
+      tray.on('double-click', () => showLauncher())
+      trayReady = true
+      updateTrayMenu()
+    } catch (error) {
+      tray = null
+      trayReady = false
+      console.error('[launcher] 创建托盘失败：', error)
+    }
+  }
 
-  app.on('second-instance', () => {
-    if (!win) return
+  function updateTrayMenu () {
+    if (!tray) return
+
+    const items = [
+      { label: '显示启动器', click: () => showLauncher() }
+    ]
+    if (runningGame && GAMES[runningGame]) {
+      items.push({ label: `正在运行：${GAMES[runningGame].name}`, enabled: false })
+    }
+    items.push(
+      { type: 'separator' },
+      { label: '退出', click: () => quitApp() }
+    )
+    tray.setContextMenu(Menu.buildFromTemplate(items))
+  }
+
+  function showLauncher () {
+    if (isQuitting) return
+    if (!win || win.isDestroyed()) {
+      if (app.isReady()) createWindow()
+      return
+    }
     if (win.isMinimized()) win.restore()
     win.show()
     win.focus()
-  })
+  }
 
-  app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
-  })
+  function launchGame (id) {
+    if (!GAMES[id]) {
+      return { ok: false, message: '未知的游戏标识' }
+    }
+    if (runningGame) {
+      return { ok: false, message: `${GAMES[runningGame].name} 正在运行，请先关闭当前游戏` }
+    }
+    if (!isGameBuilt(id)) {
+      return { ok: false, message: `${GAMES[id].name} 尚未构建，请先运行 yarn build:games` }
+    }
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
+    const args = IS_DEV
+      ? [APP_DIR, `${WISH_GAME_ARG}${id}`]
+      : [`${WISH_GAME_ARG}${id}`]
+
+    let child = null
+    try {
+      child = spawn(process.execPath, args, {
+        env: { ...process.env, WISH_LAUNCHER_CHILD: '1' },
+        stdio: IS_DEV ? 'inherit' : 'ignore'
+      })
+    } catch (error) {
+      return { ok: false, message: `启动失败：${error.message}` }
+    }
+
+    gameProcess = child
+    runningGame = id
+    updateTrayMenu()
+    sendStatus()
+    if (win && !win.isDestroyed()) win.hide()
+
+    child.on('error', error => {
+      if (gameProcess !== child) return
+      gameProcess = null
+      runningGame = ''
+      updateTrayMenu()
+      sendStatus()
+      showLauncher()
+      console.error(`[launcher] ${GAMES[id].name} 启动失败：`, error)
+    })
+
+    child.on('exit', () => {
+      if (gameProcess !== child) return
+      gameProcess = null
+      runningGame = ''
+      updateTrayMenu()
+      sendStatus()
+      if (!isQuitting) showLauncher()
+    })
+
+    return { ok: true }
+  }
+
+  function quitApp () {
+    isQuitting = true
+    stopGameProcess()
+    app.quit()
+  }
+
+  function stopGameProcess () {
+    const child = gameProcess
+    if (!child) return
+
+    gameProcess = null
+    runningGame = ''
+    updateTrayMenu()
+
+    if (process.platform === 'win32' && child.pid) {
+      spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
+    } else {
+      child.kill()
+    }
+  }
 }

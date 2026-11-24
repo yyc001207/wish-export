@@ -93,6 +93,7 @@ for (const game of GAMES) {
     assert.match(utils, /WISH_APP_ROOT/, 'utils.js 缺少 WISH_APP_ROOT 补丁')
     assert.match(utils, /process\.env\.WISH_GAME/, 'utils.js 缺少 WISH_GAME 数据目录补丁')
     assert.match(main, /WISH_RENDERER/, 'main.js 缺少 WISH_RENDERER 补丁')
+    assert.match(main, /WISH_LAUNCHER_CHILD/, 'main.js 缺少游戏子进程单实例补丁')
     assert.match(update, /WISH_UPDATE_DISABLED/, 'update/index.js 缺少禁用自更新补丁')
   })
 }
