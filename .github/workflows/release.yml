@@ -89,7 +89,8 @@ jobs:
             "- 数据保存在 %APPDATA%\\hoyo-gacha-export\\userData/<game>/，更新/重装不会覆盖。",
             "- 安装、卸载或升级前建议备份数据目录。",
             "- 安装包未签名，Windows SmartScreen 可能提示未知发布者。",
-            "- 旧版不会自动升级，旧数据需要手动导入。"
+            "- 原版独立程序的数据请用启动器“导入原版数据”手动导入。",
+            "- v0.3.0 及之后版本可在启动器里“检查更新”自动下载安装；更早版本请手动下载新版覆盖安装。"
           )
           $lines -join "`n" | Set-Content release-notes.md -Encoding UTF8
 
