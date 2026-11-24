@@ -1,6 +1,6 @@
 # 任务看板
 
-本文是方案 A 的执行清单。AI 编码代理每次开始工作时，从这里领取状态为 `TODO` 的最高优先级任务；完成后更新状态、备注与验收结果。
+本文是项目的执行清单。AI 编码代理每次开始工作时，从这里领取状态为 `TODO` 的最高优先级任务；完成后更新状态、备注与验收结果。
 
 ## 状态说明
 
@@ -36,7 +36,7 @@ yarn dev
 
 | ID | 任务 | 状态 | 产物 / 备注 |
 | --- | --- | --- | --- |
-| T0.1 | 方案 A 设计文档 | DONE | `docs/plan-a-design.md` |
+| T0.1 | 整体设计文档 | DONE | `docs/design.md` |
 | T0.2 | AI 协作入口说明 | DONE | `AGENTS.md` |
 | T0.3 | 架构、开发、同步文档 | DONE | `docs/architecture.md`、`docs/development.md`、`docs/upstream-sync.md` |
 | T0.4 | 统一入口 bootstrap | DONE | `apps/desktop/src/main/bootstrap.js` |

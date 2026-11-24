@@ -218,7 +218,7 @@ const update = async () => {
    - 需要：更新脚本里的 `target` 和 `replacement`；
    - 不需要（例如上游自己支持了环境变量）：删除对应补丁，并更新文档；
 3. 运行 `yarn patch-vendor` 与 `yarn test`；
-4. 更新本文和 `docs/plan-a-design.md` 的补丁清单。
+4. 更新本文和 `docs/design.md` 的补丁清单。
 
 不要为了让脚本通过而把 `target` 改成模糊匹配，也不要跳过校验。
 

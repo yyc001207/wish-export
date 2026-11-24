@@ -1,26 +1,24 @@
 # wish-export
 
-把 [genshin-wish-export](https://github.com/biuuu/genshin-wish-export) 与
-[star-rail-warp-export](https://github.com/biuuu/star-rail-warp-export) 合并为
-一个安装包、一个入口的抽卡记录导出工具。
-
-当前采用**方案 A**：
+给 [genshin-wish-export](https://github.com/biuuu/genshin-wish-export) 与
+[star-rail-warp-export](https://github.com/biuuu/star-rail-warp-export) 两个上游项目
+加了一个启动器的壳，不能一起启动。
 
 - 两个上游以 `git subtree` 只读引入到 `vendor/`；
-- 统一启动器选择原神或崩坏：星穹铁道；
+- 启动器选择原神或崩坏：星穹铁道；
 - 同一时间只运行一个游戏，数据分别写入系统用户目录的 `userData/<game>/`；
 - 上游更新通过 `yarn sync-upstream` 同步，并用契约测试校验。
 
 ## 当前状态
 
-方案 A 的骨架、文档、上游导入、vendor 补丁、两个游戏构建与 Windows exe/zip 打包已完成。
+当前骨架、文档、上游导入、vendor 补丁、两个游戏构建与 Windows exe/zip 打包已完成。
 启动器与游戏界面仍需在真实桌面点击验证；原版独立程序的数据导入与统一更新器尚未实现。
 进度见 [docs/tasks.md](docs/tasks.md)。
 
 ## 文档
 
 - [AGENTS.md](AGENTS.md)：AI 编码代理的入口说明与项目铁律
-- [docs/plan-a-design.md](docs/plan-a-design.md)：方案 A 设计与决策记录
+- [docs/design.md](docs/design.md)：整体设计与决策记录
 - [docs/architecture.md](docs/architecture.md)：模块、IPC、数据模型、导出流程
 - [docs/upstream-sync.md](docs/upstream-sync.md)：上游同步与冲突处理
 - [docs/development.md](docs/development.md)：环境、开发、构建、调试、打包

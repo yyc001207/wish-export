@@ -6,14 +6,14 @@
 
 把 `genshin-wish-export` 与 `star-rail-warp-export` 合并成**一个安装包、一个入口**的桌面工具，同时让两个上游仓库的更新可以**低成本、可验证地同步进来**。
 
-当前采用**方案 A**：`vendor/` 只读引入两个上游 + 统一启动器 + 一次只运行一个游戏。
+当前架构：`vendor/` 只读引入两个上游 + 托盘启动器 + 一次只运行一个游戏。
 
 ## 1. 必读顺序
 
 | 顺序 | 文档 | 什么时候读 |
 | --- | --- | --- |
 | 1 | 本文件 | 每次任务开始 |
-| 2 | [docs/plan-a-design.md](docs/plan-a-design.md) | 理解整体方案、边界与里程碑 |
+| 2 | [docs/design.md](docs/design.md) | 理解整体设计、边界与里程碑 |
 | 3 | [docs/architecture.md](docs/architecture.md) | 改主进程、IPC、数据模型、导出逻辑 |
 | 4 | [docs/upstream-sync.md](docs/upstream-sync.md) | 动 `vendor/`、跑同步、处理冲突 |
 | 5 | [docs/development.md](docs/development.md) | 搭环境、构建、调试、打包 |
@@ -24,9 +24,9 @@
 
 已完成：
 
-- 方案 A 的设计文档与协作文档。
+- 整体设计文档与协作文档。
 - 统一仓库骨架：`apps/desktop`、`scripts/`、`tests/contracts/`、`.github/workflows/`。
-- 统一启动器常驻托盘、游戏子进程切换、按游戏隔离的数据目录方案。
+- 统一启动器常驻托盘、游戏子进程切换、按游戏隔离的数据目录设计。
 - 上游导入、补丁、同步、构建、契约测试脚本。
 - 两个上游已导入 `vendor/`：原神 `c4675ab`、星铁 `8a0b664`。
 - 旧的两个上游克隆已删除；`vendor/` 是唯一代码来源。
@@ -63,7 +63,7 @@ wish-export/
 │  ├─ setup-vendor.js            # 安装两个上游的构建依赖
 │  └─ build-games.js             # 分别构建并收集到 dist/electron/games
 ├─ tests/contracts/              # 上游契约测试（Node 内置 test runner）
-├─ docs/                         # 方案、架构、开发、同步、任务文档
+├─ docs/                         # 设计、架构、开发、同步、任务文档
 ├─ vendor/                       # 导入后存在：两个上游的只读副本
 ├─ dist/electron/games/          # 构建产物：<game>/main、<game>/renderer
 └─ release/                      # electron-builder 输出
@@ -192,7 +192,7 @@ yarn --cwd vendor/starrail dev
 
 ## 10. 文档地图
 
-- [docs/plan-a-design.md](docs/plan-a-design.md)：方案 A 的完整设计与决策记录。
+- [docs/design.md](docs/design.md)：整体设计与决策记录。
 - [docs/architecture.md](docs/architecture.md)：模块职责、IPC 通道、数据模型、导出流程。
 - [docs/upstream-sync.md](docs/upstream-sync.md)：subtree 同步、补丁清单、冲突处理、CI。
 - [docs/development.md](docs/development.md)：环境搭建、开发、构建、调试、打包、发布。

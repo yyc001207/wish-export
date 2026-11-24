@@ -1,6 +1,6 @@
 # 开发指南
 
-本文说明如何搭环境、开发、构建、调试和打包。首次接手请先读完 [AGENTS.md](../AGENTS.md) 与 [方案 A 设计](plan-a-design.md)。
+本文说明如何搭环境、开发、构建、调试和打包。首次接手请先读完 [AGENTS.md](../AGENTS.md) 与 [设计文档](design.md)。
 
 ## 1. 环境要求
 
@@ -341,7 +341,7 @@ yarn dev
 1. 修改 `scripts/apply-vendor-patches.js`；
 2. 修改 `bootstrap.js` 注入的环境变量；
 3. 更新 `tests/contracts` 的补丁标记断言；
-4. 更新 [architecture.md](architecture.md) 与 [plan-a-design.md](plan-a-design.md)；
+4. 更新 [architecture.md](architecture.md) 与 [design.md](design.md)；
 5. 考虑旧数据迁移。
 
 ### 9.3 新增一个游戏（未来）
@@ -362,7 +362,7 @@ yarn dev
 
 | 改动 | 需要更新的文档 |
 | --- | --- |
-| 启动流程、环境变量 | `plan-a-design.md`、`architecture.md` |
+| 启动流程、环境变量 | `design.md`、`architecture.md` |
 | IPC、数据模型、导出 | `architecture.md` |
 | 补丁、同步流程 | `upstream-sync.md` |
 | 命令、构建、打包 | `development.md`、`AGENTS.md` |
