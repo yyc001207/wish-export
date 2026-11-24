@@ -7,6 +7,7 @@ directories:
 files:
   - package.json
   - LICENSE
+  - THIRD-PARTY-NOTICES.md
   - apps/desktop/src/main/**/*
   - apps/desktop/src/launcher/**/*
   - apps/desktop/assets/**/*
