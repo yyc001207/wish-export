@@ -15,7 +15,7 @@
     "build:games": "node scripts/build-games.js",
     "build": "yarn build:games",
     "package": "yarn build:games && electron-builder",
-    "test": "node --test tests/contracts",
+    "test": "node --test tests",
     "import-upstream": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-upstream.ps1",
     "sync-upstream": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-upstream.ps1",
     "patch-vendor": "node scripts/apply-vendor-patches.js"

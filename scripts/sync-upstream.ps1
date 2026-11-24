@@ -55,7 +55,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host '[sync] 运行契约测试...'
-node --test tests/contracts
+node --test tests
 if ($LASTEXITCODE -ne 0) {
   throw '契约测试失败，请检查上游接口或数据格式是否变化。'
 }
