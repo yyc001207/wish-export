@@ -115,8 +115,9 @@ wish-export/
 
 官方打包只在 GitHub Actions 执行：
 
-- 推送到 `main` 且涉及代码、图标、构建或 `vendor/`：`build.yml` 自动构建 exe/zip 并上传 workflow artifact；
-- 推送 `v*` 标签：`release.yml` 构建并创建 GitHub Release。
+- 推送 `v*` 标签：`ci.yml` 做语法检查与契约测试，`release.yml` 构建 exe/zip、生成 SHA256 并创建 GitHub Release；
+- 日常提交与推送到 `main` 不触发任何 workflow；需要临时产出安装包时在 Actions 页面手动运行 `build.yml`；
+- 上游定时同步 `sync-upstream.yml` 仍按每天 04:00 检查，也可手动触发。
 
 单个分析工具热更新开发不要走统一入口，直接在上游目录里跑：
 
