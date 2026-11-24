@@ -238,8 +238,10 @@ Get-ChildItem .\userData -Recurse
 官方打包只在 GitHub Actions 执行，不在本地运行 electron-builder。
 
 - 推送 `v*` 标签：
-  `ci.yml` 跑语法检查与契约测试，`release.yml` 构建 exe/zip、生成 SHA256，并创建 GitHub Release。
-- 推送到 `main` 不触发 workflow；临时需要安装包时在 Actions 页面手动运行 `build.yml`。
+  `release.yml` 构建 exe/zip、生成 SHA256，并创建 GitHub Release；安装包只由打标签触发。
+- 推送到 `main` 或提 pull request：
+  `ci.yml` 跑语法检查与契约测试，不打包。
+- 需要临时安装包时在 Actions 页面手动运行 `build.yml`。
 
 本地只做开发构建：
 

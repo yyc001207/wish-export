@@ -136,7 +136,7 @@ yarn test
 ### T3.3 打包提示
 
 - Windows 产物由 GitHub Actions 构建，不在本地运行 electron-builder；
-- 推送 `v*` 标签触发 `ci.yml`（语法检查 + 契约测试）与 `release.yml`（构建并发布）；推送 `main` 不触发 workflow，需要安装包时手动运行 `build.yml`；
+- 推送 `v*` 标签触发 `release.yml`（构建并发布），安装包只由打标签产出；推 `main` 或提 PR 触发 `ci.yml`（语法检查 + 契约测试）；需要临时安装包时手动运行 `build.yml`；
 - NSIS 默认安装到当前用户目录，避免 Program Files 写入权限问题；
 - 数据写在 `app.getPath('userData')/userData/<game>/`，更新/重装不会覆盖；安装/卸载前仍建议备份；
 - 安装包未签名，SmartScreen 可能提示未知发布者；
