@@ -219,6 +219,12 @@ docs: 修复文档错字
 7. 推送标签后会触发 `.github/workflows/release.yml`，由 GitHub Actions 构建 exe/zip、生成 SHA256 并创建 GitHub Release。
 8. 如果自动发布失败，查看 Actions 日志。
 
+统一更新器（M4）以 GitHub 的 `releases/latest` 作为更新源，因此：
+
+- 只有打了 `v*` 标签并成功发布的版本才会被旧版本看到；
+- 预发布标签（含 `-`）在 Release 里标记为 prerelease，不会成为 `latest`；
+- 发布说明与 `SHA256SUMS.txt` 由 `release.yml` 生成，更新器依赖后者的文件名与格式，不要手工改名或删掉该资产。
+
 打包不在本地执行。本地只运行 `yarn test` 和可选的 `yarn build:games` 做验证。
 
 推送与打标签属于人工确认操作，AI 代理不得自行执行。

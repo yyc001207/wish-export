@@ -14,7 +14,11 @@
 
 ## 当前下一步
 
-**M3 剩余真机确认**（首次启动 / 覆盖升级 / 卸载后数据保留）；之后为 M4 统一更新器。
+**M4 统一更新器已实现，待真机验证**（启动器“检查更新”→ 下载校验 → 静默安装重启）。M5 可选 UI 统一已按 2026-11-24 的决定整块标记 `SKIP`。
+
+M3 三条安装路径已于 2026-11-24 真机确认：首次启动能把数据写入 `%APPDATA%\hoyo-gacha-export\`、覆盖安装后数据仍在、卸载程序后该目录保留。
+
+M4 实现要点：`apps/desktop/src/main/updater.js` 读取本仓库 GitHub Release（`releases/latest`），比较版本后下载 `Wish-Export-<version>-x64.exe`，用 `SHA256SUMS.txt` 校验，再通过 `updates/install-update.cmd` 等启动器退出后调用 NSIS 静默安装；上游 `WISH_UPDATE_DISABLED` 补丁永久保留，由统一更新器接管更新。
 
 T3.5 用户文档已于 2026-11-24 完成，根 README 重写为面向使用者的结构：下载安装、使用方法、数据位置与备份、两种旧版迁移、常见问题、开发入口。
 
@@ -108,6 +112,7 @@ yarn test
 | T3.5 | 用户文档 | DONE | 根 README 覆盖下载安装、使用流程、数据位置与备份、从统一版旧目录/原版独立程序迁移、常见问题、开发入口 |
 | T3.6 | 许可证与署名 | DONE | 根 `LICENSE`（MIT，2026 yyc001207）；`THIRD-PARTY-NOTICES.md` 收录两个上游 MIT 全文与版权归属，并随安装包分发（`electron-builder.yml` files）；README 注明来源 |
 | T3.7 | GitHub Releases 自动发布 | DONE | `release.yml` 已在 v0.1.0、v0.1.1、v0.2.0 实际运行成功，exe/zip/SHA256 已上传 |
+| T3.8 | 安装、覆盖升级与卸载路径验证 | DONE | 2026-11-24 真机确认：首次启动数据写入 `%APPDATA%\hoyo-gacha-export\`；覆盖安装后数据保留；卸载程序后该目录保留 |
 
 ### T3.1 实现提示
 
@@ -153,10 +158,10 @@ yarn test
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T4.1 | 更新器设计 | TODO | 明确 manifest 格式、更新包结构、版本比较、回滚 |
-| T4.2 | 实现统一更新器 | TODO | 能从自己的发布源下载完整统一包并替换 |
-| T4.3 | 关闭临时禁用 | TODO | 移除 `WISH_UPDATE_DISABLED` 或改为由统一更新器接管 |
-| T4.4 | 更新失败回滚 | TODO | 下载失败、校验失败、替换失败都不破坏现有安装 |
+| T4.1 | 更新器设计 | DONE | `docs/design.md` §11 与 `docs/architecture.md` §5.4：以 GitHub Release 为 manifest，exe + `SHA256SUMS.txt` 为更新包，语义化版本比较，失败不破坏现有安装 |
+| T4.2 | 实现统一更新器 | DONE | `apps/desktop/src/main/updater.js` 检查/下载/校验；启动器提供“检查更新”、下载进度、“立即安装并重启”；7 项单测通过；`checkForUpdate` 已对真实 GitHub API 跑通（0.1.0 → 0.2.0） |
+| T4.3 | 关闭临时禁用 | DONE | 上游 `WISH_UPDATE_DISABLED` 补丁保留（上游更新会覆盖统一目录）；统一更新器接管更新，`bootstrap.js` 中的注释与 `docs/upstream-sync.md` 已说明 |
+| T4.4 | 更新失败回滚 | DONE | 下载失败/校验失败删除临时文件并提示，不触碰安装目录；安装前把 `userData/` 备份到 `updates/userData-backup-<version>/`；安装由 NSIS 执行，中断后可从 Releases 重新安装，数据不受影响 |
 
 约束：
 
@@ -165,15 +170,24 @@ yarn test
 - 更新前备份 `userData/`；
 - 版本号统一使用根 `package.json`。
 
+### T4.2 实现提示
+
+- 涉及文件：`apps/desktop/src/main/updater.js`、`apps/desktop/src/main/bootstrap.js`、`apps/desktop/src/launcher/{preload.js,index.html,launcher.js,launcher.css}`、`tests/unit/updater.test.js`、`.github/workflows/ci.yml`。
+- 关键约束：更新器只用 Node 内置 `https`/`crypto`，不引入依赖；`updater.js` 不在顶层 `require('electron')`，便于单测；开发态（`!app.isPackaged`）不检查更新。
+- 下载目录：`app.getPath('userData')/updates/`；安装包与备份都在这里，卸载程序不会删除。
+- 验证命令：`node tests/unit/updater.test.js`、`node tests/contracts/vendor-shape.test.js`、`node --check apps/desktop/src/main/updater.js`。
+- 真机验证：安装 v0.2.0 → 启动器点“检查更新” → 若能访问 GitHub 应显示“已是最新版本”；发布更高版本后应能下载、校验并静默安装。
+
 ## M5：可选 UI 统一
 
 | ID | 任务 | 状态 | 验收标准 |
 | --- | --- | --- | --- |
-| T5.1 | 统一设置页 | TODO | 两个分析工具共用语言、更新、数据目录设置，不影响分析工具业务 |
-| T5.2 | 启动器显示最近更新时间 | TODO | 读取 `app.getPath('userData')/userData/<game>/` 最新 `time` |
-| T5.3 | 托盘快速切换 | TODO | 不破坏单进程单工具约束 |
+| T5.1 | 统一设置页 | SKIP | 2026-11-24 决定不做，见 `docs/design.md` §13 |
+| T5.2 | 启动器显示最近更新时间 | SKIP | 同上 |
+| T5.3 | 托盘快速切换 | SKIP | 同上 |
 
-当前不做：分析工具主界面统一、共享 core、单窗口双分析工具。
+不做的原因：当前启动器已覆盖选择分析工具、导入旧数据、打开数据目录、检查更新这些入口；统一设置页会与两个上游各自的设置界面冲突，收益低而回归风险高。分析工具主界面继续使用 vendor 原版。
+
 
 ## 任务模板
 

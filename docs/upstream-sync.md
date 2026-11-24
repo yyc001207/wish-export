@@ -250,8 +250,7 @@ const update = async () => {
 - 统一版本号在根 `package.json`，完整规则见 [versioning.md](versioning.md)。
 - 两个上游的版本号只用于展示与 UIGF 的 `export_app_version`，不参与统一版本判断。
 - 上游同步 PR 不修改版本号；发布时再按变更影响提升 PATCH / MINOR / MAJOR。
-- 上游自更新已禁用；发布统一版时由 GitHub Actions 打包。
-- 统一更新器上线前，不要移除 `WISH_UPDATE_DISABLED`。
+- 统一更新器已实现（M4）：由启动器读取本仓库 Release 并安装完整包；上游自更新的禁用补丁永久保留，不要移除 `WISH_UPDATE_DISABLED`。
 
 ## 8. 回滚
 

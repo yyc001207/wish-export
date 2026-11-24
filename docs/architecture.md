@@ -23,6 +23,8 @@
    ├─ OPEN_DATA_DIR
    ├─ IMPORT_PICK_DIR
    ├─ IMPORT_LEGACY_DATA
+   ├─ UPDATE_STATUS / UPDATE_CHECK / UPDATE_DOWNLOAD / UPDATE_INSTALL
+   ├─ OPEN_RELEASES
    ├─ QUIT_APP
    └─ spawn 分析工具子进程（--wish-game=<id>, WISH_LAUNCHER_CHILD=1）
       └─ require dist/electron/games/<game>/main/main.js
@@ -39,6 +41,7 @@
 - 关闭分析工具窗口后子进程退出，启动器重新显示并恢复入口。
 - 关闭启动器窗口只隐藏到托盘；托盘菜单“退出”才结束程序。
 - 分析工具窗口的渲染器仍然使用上游原版 Vue 应用。
+- 统一更新器只在启动器进程里运行；下载与备份都在 `app.getPath('userData')/updates/`，不写安装目录。
 
 ## 3. 上游文件职责
 
@@ -140,9 +143,14 @@
 | `OPEN_DATA_DIR` | 启动器渲染器 → 主进程 | 打开数据根目录 |
 | `IMPORT_PICK_DIR` | 启动器渲染器 → 主进程 | 弹出目录选择框，返回 `{canceled, dir, count}` |
 | `IMPORT_LEGACY_DATA` | 启动器渲染器 → 主进程 | 参数 `{dir, game}`，复制原版数据，返回 `{ok, copied, skipped, targetDir}` 或 `{ok:false, message}` |
+| `UPDATE_STATUS` | 启动器渲染器 → 主进程 | 返回当前更新状态 `{status, version, progress, message}` |
+| `UPDATE_CHECK` | 启动器渲染器 → 主进程 | 检查 GitHub 最新 Release，返回最新状态；开发态返回 `disabled` |
+| `UPDATE_DOWNLOAD` | 启动器渲染器 → 主进程 | 下载安装包到 `updates/` 并用 `SHA256SUMS.txt` 校验，返回最新状态 |
+| `UPDATE_INSTALL` | 启动器渲染器 → 主进程 | 备份 `userData/`、写入等待脚本并退出，由 NSIS 静默安装；返回 `{ok, backup}` 或 `{ok:false, message}` |
+| `OPEN_RELEASES` | 启动器渲染器 → 主进程 | 用系统浏览器打开发布页（更新失败时的兜底） |
 | `QUIT_APP` | 启动器渲染器 → 主进程 | 结束分析工具子进程并退出程序 |
 
-主进程 → 启动器渲染器的事件：`LAUNCHER_STATUS_CHANGED`，运行状态变化后推送完整 status。
+主进程 → 启动器渲染器的事件：`LAUNCHER_STATUS_CHANGED`（运行状态变化后推送完整 status）、`UPDATE_STATE_CHANGED`（检查/下载/安装状态变化后推送）。
 
 启动器只通过 `apps/desktop/src/launcher/preload.js` 暴露的 `window.launcher` 调用这些通道；窗口开启 `contextIsolation` 与 `sandbox`，CSP 为 `default-src 'self'`。
 
@@ -249,6 +257,48 @@ autoUpdate, fetchFullHistory, hideNovice
 4. 分析工具运行中拒绝导入，避免与上游同时读写同一目录。
 
 实现：`apps/desktop/src/main/import-legacy-data.js`；单测：`tests/unit/import-legacy-data.test.js`。
+
+### 5.4 统一更新流程
+
+```text
+启动器启动（打包态）
+        │  1.2s 后静默检查 / 用户点“检查更新”
+        ▼
+GET api.github.com/repos/yyc001207/wish-export/releases/latest
+        │  解析 tag_name 与资产（exe / zip / SHA256SUMS.txt）
+        ▼
+compareVersions(tag, app.getVersion()) > 0 ?
+        │ 否 → 状态 none（已是最新版本）
+        ▼ 是
+状态 available → 用户点“下载并安装”
+        │
+        ▼
+GET Wish-Export-<version>-x64.exe → %APPDATA%\hoyo-gacha-export\updates\<file>.part
+        │  按 content-length 报进度
+        ▼
+GET SHA256SUMS.txt → 校验 .part
+        │ 失败 → 删除 .part，状态 error，安装目录不变
+        ▼ 成功 → 重命名为正式文件，状态 ready
+        │
+        ▼ 用户点“立即安装并重启”
+copy %APPDATA%\hoyo-gacha-export\userData → updates\userData-backup-<旧版本>\
+写 updates\install-update.cmd：
+  @echo off
+  timeout /t 2 /nobreak >nul
+  start "" "<安装包.exe>" /S --force-run
+        │
+        ▼
+启动器退出 → cmd 等待 2 秒后运行 NSIS → 覆盖安装目录 → --force-run 启动新版本
+```
+
+要点：
+
+- 更新器不修改安装目录，替换动作全部交给 NSIS；下载失败、校验失败、启动器退出前取消都不会动现有安装。
+- `--force-run` 让静默安装在结束后启动新版本；启动的是新 exe，因此不经过上游 `RELAUNCH`。
+- 无法访问 GitHub 时，状态为 `error` 并显示“打开发布页”，用户手动下载覆盖安装，数据目录不受影响。
+- `updates/` 下的安装包与 `userData-backup-*` 保留，便于失败后重试；用户可手动清理。
+
+实现：`apps/desktop/src/main/updater.js`（网络、版本比较、校验）与 `apps/desktop/src/main/bootstrap.js`（状态机、备份、安装脚本）；单测：`tests/unit/updater.test.js`。
 
 ## 6. 数据获取流程
 

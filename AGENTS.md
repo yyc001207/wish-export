@@ -37,11 +37,13 @@
 - Windows exe 与 zip 由 GitHub Actions 构建产出（v0.2.0：exe 59.8 MB / 62,696,935 B，zip 80.5 MB / 84,448,614 B）；本地不保留 `release/` 产物。
 - v0.1.0、v0.1.1、v0.2.0 已发布到 GitHub Releases：exe/zip/SHA256 均由 GitHub Actions 构建上传。
 - 原版独立程序的数据可在启动器里手动导入（T3.2，只复制不覆盖），2026-11-24 真机验证通过：导入、重复导入不覆盖、分析工具运行中入口禁用。
+- 统一更新器已实现（M4，2026-11-24）：启动器“检查更新”读取本仓库 GitHub Release，下载完整安装包、用 `SHA256SUMS.txt` 校验，备份 `userData/` 后由 NSIS 静默安装并重启；上游自更新仍保持禁用。
+- 安装、覆盖升级、卸载路径已在真实桌面验证（2026-11-24）：数据始终在 `%APPDATA%\hoyo-gacha-export\`，覆盖安装与卸载程序都不影响。
 
 未完成（不要假装已存在）：
 
-- 统一更新器未实现；当前通过补丁禁用上游自更新。
-- 单窗口统一 UI 未实现，也不在当前范围。
+- 统一更新器尚未在真实桌面点过“下载并安装”（当前环境无法访问 Release 资产的下载 CDN，只能验证到 API 与解析层）。
+- 单窗口统一 UI 与 M5 可选 UI 统一已明确不做（2026-11-24）。
 
 进度以 [docs/tasks.md](docs/tasks.md) 为准。
 
@@ -189,13 +191,14 @@ yarn --cwd vendor/starrail dev
 | IPC 通道重名 | 同时加载两个分析工具时直接抛错 | 启动器一次只 spawn 一个分析工具子进程 |
 | 数据文件重名 | 两个分析工具都写 `userData/gacha-list-<uid>.json`，互相覆盖 | 已通过补丁改为 `userData/<game>/` |
 | 上游路径假设 | 上游认为 `main.js` 在 `src/main/`、renderer 在 `dist/electron/renderer/` | 统一入口注入 `WISH_APP_ROOT` / `WISH_RENDERER` |
-| 上游自更新 | 会用原版 app.zip 覆盖整个统一安装目录 | 已通过 `WISH_UPDATE_DISABLED` 禁用；统一更新器另行实现 |
+| 上游自更新 | 会用原版 app.zip 覆盖整个统一安装目录 | 已通过 `WISH_UPDATE_DISABLED` 禁用（永久保留）；升级只走启动器里的统一更新器 |
+| GitHub 下载 CDN 不可达 | 检查更新能拿到版本信息，但安装包下载超时/失败 | 更新面板提示失败并提供“打开发布页”；用户手动下载覆盖安装，数据不受影响 |
 | element-plus 版本不同 | 原神 1.3.0-beta.7，星铁 2.3.7 | 每个分析工具使用自己的 `node_modules` 构建，不合并依赖 |
 | UIGF / SRGF 差异 | 原神 UIGF 3.0/4.1，星铁 SRGF/UIGF 4.x | 导出逻辑留在各自 vendor，不抽公共序列化器 |
 | 星铁数据频繁更新 | `idJson.json` 随游戏版本更新 | 依赖 `yarn sync-upstream` + 契约测试 |
 | 原神上游长期低活跃 | 最后提交 2026-03-17 | 原神改动以修复为主，不要等待上游新功能 |
 | 旧版数据目录 | 旧程序各自在安装目录下写 `userData/` | 统一版旧安装目录会自动迁移到 AppData；原版独立程序的数据用启动器“导入原版数据”手动导入 |
-| 上游 `RELAUNCH` | 上游重启不带 `--wish-game`，会回到启动器 | 当前更新已禁用，不会触发；统一更新器上线前处理 |
+| 上游 `RELAUNCH` | 上游重启不带 `--wish-game`，会回到启动器 | 上游更新保持禁用，不会触发；统一更新器安装后由 NSIS `--force-run` 启动新版本，不经过上游 `RELAUNCH` |
 | NSIS 安装目录 | 程序安装到只读目录会失败；数据现在在 AppData，不受安装目录影响 | 默认安装到当前用户目录；数据目录定期备份 |
 | 分析工具子进程单实例锁 | 启动器已持有单实例锁，分析工具子进程会被判定为第二实例 | 子进程带 `WISH_LAUNCHER_CHILD=1`，由 vendor 补丁跳过单实例锁 |
 
