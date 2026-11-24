@@ -23,6 +23,7 @@ jobs:
           node --check apps/desktop/src/main/bootstrap.js
           node --check apps/desktop/src/main/migrate-user-data.js
           node --check apps/desktop/src/main/import-legacy-data.js
+          node --check apps/desktop/src/main/updater.js
           node --check apps/desktop/src/launcher/preload.js
           node --check apps/desktop/src/launcher/launcher.js
           node --check scripts/apply-vendor-patches.js
@@ -31,6 +32,7 @@ jobs:
           node --check tests/contracts/vendor-shape.test.js
           node --check tests/unit/migrate-user-data.test.js
           node --check tests/unit/import-legacy-data.test.js
+          node --check tests/unit/updater.test.js
 
       - name: Contract tests
         run: node --test tests
